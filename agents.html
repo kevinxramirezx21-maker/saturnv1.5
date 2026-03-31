@@ -519,3 +519,22 @@ window.addEventListener("load",async()=>{
 </script>
 </body>
 </html>
+<!-- Global Slippage Slider -->
+<div class="bg-black/60 border border-blue-400/30 rounded-2xl p-4 mb-6">
+  <label class="text-xs text-gray-400 flex justify-between">
+    <span>Global Slippage:</span>
+    <span id="slippageVal" class="text-white font-medium">1.5%</span>
+  </label>
+  <input type="range" id="slippageSlider" min="50" max="1000" step="25" value="150" class="w-full accent-blue-400 mt-2">
+  <div class="flex justify-between text-[10px] text-gray-500"><span>0.5%</span><span>10%</span></div>
+  <p class="text-xs text-gray-500 mt-1">Higher = more likely to fill on fast pumps</p>
+</div>
+
+<!-- MEV Protection Toggle (next to Aggressive) -->
+<div class="flex items-center gap-3 bg-black/60 border border-emerald-400/30 rounded-2xl p-4 mb-6">
+  <input type="checkbox" id="mevToggle" class="w-5 h-5 accent-emerald-400" checked>
+  <div>
+    <span class="text-emerald-400 font-bold">🛡️ MEV Protection</span>
+    <p class="text-xs text-gray-400">Higher priority fees • Less sandwich risk</p>
+  </div>
+</div>
