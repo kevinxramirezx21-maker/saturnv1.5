@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Saturn Lock | Meme Token Locker</title>
+<script src="https://unpkg.com/@solana/web3.js@1.95.3/lib/index.iife.min.js"></script>
+<script src="https://terminal.jup.ag/main-v2.js" data-preload></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#03050c;--s:#07090f;--s2:#0c0f1a;--s3:#101420;--b:#131826;--b2:#1a2236;--gold:#c9a84c;--purple:#9945FF;--green:#00d98b;--red:#ef4444;--text:#dde6f5;--m:#2a3a52;--m2:#5a7090;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-serif;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse 80% 60% at 50% -20%,rgba(201,168,76,0.08) 0%,transparent 60%),radial-gradient(ellipse 50% 50% at 90% 110%,rgba(153,69,255,0.05) 0%,transparent 55%);pointer-events:none;}
+body::after{content:'';position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(201,168,76,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(201,168,76,0.02) 1px,transparent 1px);background-size:44px 44px;pointer-events:none;}
+header{position:sticky;top:0;z-index:300;background:rgba(3,5,12,0.95);backdrop-filter:blur(24px);border-bottom:1px solid var(--b);padding:0 28px;height:62px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;cursor:pointer;user-select:none;}
+.logo-ico{width:36px;height:36px;flex-shrink:0;}
+.logo-name{display:flex;flex-direction:column;gap:1px;}
+.logo-title{font-size:15px;font-weight:700;letter-spacing:-0.01em;line-height:1.1;}
+.logo-sub{font-size:9px;color:var(--gold);font-weight:700;letter-spacing:0.12em;text-transform:uppercase;font-family:'Space Mono',monospace;}
+.nav-tabs{display:flex;align-items:center;gap:2px;background:var(--s2);border:1px solid var(--b);border-radius:10px;padding:3px;}
+.nav-tab{padding:6px 14px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.15s;border:none;background:transparent;color:var(--m2);font-family:'Space Grotesk',sans-serif;}
+.nav-tab.active{background:var(--s3);color:var(--gold);}
+.hdr-right{display:flex;align-items:center;gap:8px;}
+.dev-badge{display:none;align-items:center;gap:6px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.35);border-radius:8px;padding:5px 10px;font-size:10px;font-weight:700;color:#f87171;font-family:'Space Mono',monospace;cursor:pointer;}
+.dev-badge-dot{width:6px;height:6px;border-radius:50%;background:#ef4444;animation:blink 1s infinite;}
+.ticker{display:flex;align-items:center;gap:6px;background:var(--s2);border:1px solid var(--b2);border-radius:8px;padding:5px 11px;font-size:12px;}
+.tdot{width:6px;height:6px;border-radius:50%;background:var(--gold);box-shadow:0 0 7px rgba(201,168,76,0.7);animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.3;}}
+.tsym{color:var(--m2);}.tprice{font-weight:700;color:var(--gold);font-family:'Space Mono',monospace;}
+.wallet-btn{display:flex;align-items:center;gap:7px;padding:8px 15px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;border:none;font-family:'Space Grotesk',sans-serif;transition:all 0.2s;background:linear-gradient(135deg,#9945FF,#7c3aed);color:white;}
+.wallet-btn:hover{transform:translateY(-1px);}
+.wallet-btn.conn{background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.28);color:var(--gold);box-shadow:none;}
+.wdot{width:7px;height:7px;border-radius:50%;background:var(--gold);}
+.modal-bd{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.8);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity 0.2s;}
+.modal-bd.open{opacity:1;pointer-events:all;}
+.modal{background:var(--s);border:1px solid var(--b2);border-radius:20px;padding:26px;width:100%;max-width:400px;transform:translateY(14px);transition:transform 0.2s;}
+.modal-bd.open .modal{transform:none;}
+.mhdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;}
+.mtitle{font-size:18px;font-weight:700;}.mclose{width:30px;height:30px;border-radius:7px;border:1px solid var(--b2);background:transparent;color:var(--m2);cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center;}
+.mclose:hover{background:var(--s2);}
+.msub{font-size:12px;color:var(--m2);margin-bottom:16px;}
+.wlist{display:flex;flex-direction:column;gap:7px;}
+.wopt{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;cursor:pointer;border:1.5px solid var(--b);background:var(--s2);transition:all 0.15s;}
+.wopt:hover{border-color:var(--b2);transform:translateX(2px);}
+.wopt.det{border-color:rgba(201,168,76,0.2);}
+.wopt.det:hover{border-color:var(--gold);}
+.wicon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.winfo{flex:1;}.wname{font-size:13px;font-weight:700;margin-bottom:1px;}.wstatus{font-size:10px;color:var(--m2);}.wstatus.det{color:var(--gold);}
+.wdiv{text-align:center;font-size:10px;color:var(--m);padding:6px 0;text-transform:uppercase;letter-spacing:0.08em;font-weight:700;}
+.dev-modal-inner{max-width:360px;}
+.dev-icon-big{font-size:34px;text-align:center;margin-bottom:8px;}
+.dev-title{font-size:17px;font-weight:800;text-align:center;color:var(--gold);margin-bottom:3px;}
+.dev-sub{font-size:12px;color:var(--m2);text-align:center;margin-bottom:16px;}
+.dev-perks{background:var(--s2);border:1px solid var(--b2);border-radius:10px;padding:12px;margin-bottom:13px;}
+.dp-title{font-size:9px;font-weight:700;color:var(--m2);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px;font-family:'Space Mono',monospace;}
+.dp-row{font-size:12px;color:var(--m2);margin-bottom:4px;display:flex;gap:6px;}
+.dp-row span{color:var(--green);}
+.dev-inp{width:100%;background:var(--s2);border:1.5px solid var(--b2);border-radius:10px;padding:12px;color:var(--text);font-size:16px;font-family:'Space Mono',monospace;text-align:center;letter-spacing:0.08em;transition:border-color 0.2s;margin-bottom:8px;}
+.dev-inp:focus{outline:none;border-color:var(--gold);}
+.dev-inp::placeholder{color:var(--m);font-size:13px;letter-spacing:0.04em;}
+.dev-err{font-size:11px;color:#f87171;text-align:center;min-height:14px;margin-bottom:8px;}
+.btn-dev{width:100%;padding:11px;border-radius:10px;border:none;font-size:14px;font-weight:800;cursor:pointer;font-family:'Space Grotesk',sans-serif;background:linear-gradient(135deg,#c9a84c,#a07830);color:#03050c;transition:all 0.18s;}
+.btn-dev:hover{transform:translateY(-1px);}
+.dev-status-panel{background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.2);border-radius:11px;padding:13px;margin-bottom:11px;}
+.dsp-title{font-size:10px;font-weight:700;color:#f87171;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:9px;font-family:'Space Mono',monospace;}
+.dsp-row{display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px;}
+.dsp-row:last-child{margin-bottom:0;}
+.dpk{color:var(--m2);}.dpv{font-weight:700;font-family:'Space Mono',monospace;}
+.dpv.free{color:var(--green);}.dpv.always{color:var(--m2);}
+.dev-addr-box{background:var(--s2);border:1px solid var(--b2);border-radius:9px;padding:11px;margin-bottom:11px;}
+.dab-title{font-size:9px;font-weight:700;color:var(--m2);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:5px;font-family:'Space Mono',monospace;}
+.dab-addr{font-size:10px;font-family:'Space Mono',monospace;color:var(--gold);word-break:break-all;line-height:1.5;}
+.dab-note{font-size:10px;color:var(--m2);margin-top:4px;}
+.btn-deact{width:100%;padding:9px;border-radius:8px;border:1px solid rgba(239,68,68,0.3);background:transparent;color:#f87171;font-size:12px;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif;transition:all 0.15s;}
+.btn-deact:hover{background:rgba(239,68,68,0.1);}
+.dev-free-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);color:#f87171;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;font-family:'Space Mono',monospace;}
+.page{position:relative;z-index:1;display:none;}
+.page.active{display:block;}
+.wrap{max-width:680px;margin:0 auto;padding:42px 22px 80px;}
+.banner{background:linear-gradient(135deg,rgba(201,168,76,0.07),rgba(153,69,255,0.04));border:1px solid rgba(201,168,76,0.18);border-radius:14px;padding:14px 20px;margin-bottom:32px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.banner-l{display:flex;align-items:center;gap:10px;}
+.bt{font-weight:700;color:var(--gold);margin-bottom:2px;font-size:13px;}
+.bs{font-size:12px;color:var(--m2);}
+.bpill{background:rgba(201,168,76,0.13);border:1px solid rgba(201,168,76,0.28);color:var(--gold);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;white-space:nowrap;font-family:'Space Mono',monospace;}
+.dev-banner{background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.22);border-radius:14px;padding:12px 18px;margin-bottom:16px;display:none;align-items:center;gap:10px;}
+.dev-banner.show{display:flex;}
+.dev-banner-text{font-size:12px;color:#f87171;font-weight:600;}
+.dev-banner-text strong{font-family:'Space Mono',monospace;}
+.steps{display:flex;align-items:center;margin-bottom:34px;}
+.si{display:flex;flex-direction:column;align-items:center;gap:5px;}
+.sc{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:11px;font-weight:700;border:2px solid var(--b2);color:var(--m);transition:all 0.3s;}
+.sc.act{border-color:var(--gold);color:var(--gold);}
+.sc.done{background:var(--gold);border-color:var(--gold);color:#03050c;}
+.sl{font-size:9px;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:var(--m);white-space:nowrap;}
+.sl.act{color:var(--gold);}
+.scon{flex:1;height:1px;background:var(--b2);margin:0 7px 20px;transition:background 0.4s;}
+.scon.done{background:var(--gold);}
+.card{background:var(--s);border:1px solid var(--b);border-radius:20px;padding:34px;box-shadow:0 40px 100px rgba(0,0,0,0.6);}
+.snum{font-family:'Space Mono',monospace;font-size:10px;font-weight:700;color:var(--gold);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:7px;}
+.ctitle{font-size:24px;font-weight:700;letter-spacing:-0.025em;margin-bottom:5px;}
+.csub{font-size:13px;color:var(--m2);margin-bottom:22px;line-height:1.6;}
+.lcards{display:flex;flex-direction:column;gap:11px;}
+.lcard{background:var(--s2);border:1.5px solid var(--b);border-radius:13px;padding:20px;cursor:pointer;transition:all 0.18s;position:relative;overflow:hidden;}
+.lcard:hover{border-color:var(--b2);transform:translateY(-1px);}
+.lcard.sel{border-color:var(--gold);}
+.lcard.sel::after{content:'';position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at top left,rgba(201,168,76,0.05) 0%,transparent 65%);}
+.lchd{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;}
+.lcico{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.14);font-size:19px;}
+.lctitle{font-size:15px;font-weight:700;margin-bottom:4px;}
+.lcdesc{font-size:12px;color:var(--m2);line-height:1.65;margin-bottom:12px;}
+.tags{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+.tl{font-size:9px;font-weight:700;color:var(--m);text-transform:uppercase;letter-spacing:0.07em;}
+.tg{font-size:9px;font-weight:700;padding:3px 7px;border-radius:4px;display:inline-flex;align-items:center;gap:3px;text-transform:uppercase;}
+.tgg{background:rgba(201,168,76,0.09);border:1px solid rgba(201,168,76,0.22);color:var(--gold);}
+.tgb{background:rgba(245,158,11,0.09);border:1px solid rgba(245,158,11,0.22);color:#fbbf24;}
+.beta-b{font-family:'Space Mono',monospace;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;background:rgba(168,85,247,0.14);border:1px solid rgba(168,85,247,0.28);color:#c084fc;}
+.radio{width:19px;height:19px;border-radius:50%;border:2px solid var(--b2);display:flex;align-items:center;justify-content:center;transition:all 0.2s;flex-shrink:0;}
+.radio.chk{background:var(--gold);border-color:var(--gold);}
+.radio.chk::after{content:'';width:7px;height:7px;border-radius:50%;background:#03050c;}
+.fg{margin-bottom:14px;}
+.fl{font-size:10px;font-weight:700;color:var(--m2);display:block;margin-bottom:6px;letter-spacing:0.07em;text-transform:uppercase;}
+.fi{width:100%;background:var(--s2);border:1.5px solid var(--b);border-radius:10px;padding:11px 13px;color:var(--text);font-size:13px;font-family:'Space Grotesk',sans-serif;transition:border-color 0.2s;}
+.fi:focus{outline:none;border-color:var(--gold);}
+.fi::placeholder{color:var(--m);}
+select.fi{cursor:pointer;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.ftlbl{font-size:10px;font-weight:700;color:var(--m2);letter-spacing:0.07em;text-transform:uppercase;margin-bottom:8px;display:block;}
+.ftog{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:16px;}
+.fopt{border-radius:12px;padding:14px;cursor:pointer;border:2px solid var(--b);background:var(--s2);transition:all 0.18s;position:relative;}
+.fopt:hover{border-color:var(--b2);}
+.fopt.fsol{border-color:var(--purple);background:rgba(153,69,255,0.06);}
+.fopt.fsat{border-color:var(--gold);background:rgba(201,168,76,0.06);}
+.fohd{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.foico{font-size:17px;}
+.fotitle{font-size:12px;font-weight:700;margin-bottom:2px;}
+.foamt{font-size:16px;font-weight:700;font-family:'Space Mono',monospace;margin-bottom:2px;}
+.foamt.sol{color:var(--purple);}
+.foamt.sat{color:var(--gold);}
+.foamt.free{color:#f87171;}
+.fosub{font-size:10px;color:var(--m2);}
+.save-p{position:absolute;top:-9px;right:10px;background:linear-gradient(135deg,#c9a84c,#a07830);color:#03050c;font-size:9px;font-weight:800;padding:2px 8px;border-radius:20px;font-family:'Space Mono',monospace;}
+.frdot{width:15px;height:15px;border-radius:50%;border:2px solid var(--b2);display:flex;align-items:center;justify-content:center;}
+.fopt.fsol .frdot{background:var(--purple);border-color:var(--purple);}
+.fopt.fsol .frdot::after,.fopt.fsat .frdot::after{content:'';width:5px;height:5px;border-radius:50%;background:#03050c;}
+.fopt.fsat .frdot{background:var(--gold);border-color:var(--gold);}
+.fopt.fdev{border-color:#ef4444;background:rgba(239,68,68,0.06);}
+.fopt.fdev .frdot{background:#ef4444;border-color:#ef4444;}
+.fopt.fdev .frdot::after{content:'';width:5px;height:5px;border-radius:50%;background:#03050c;}
+.fbox{background:var(--s3);border:1px solid var(--b2);border-radius:11px;padding:14px 16px;margin-bottom:16px;}
+.fbtitle{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.09em;margin-bottom:10px;font-family:'Space Mono',monospace;color:var(--gold);}
+.fline{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--b);}
+.fline:last-child{border-bottom:none;border-top:1px solid var(--b2);padding-top:9px;margin-top:3px;}
+.fk{font-size:12px;color:var(--m2);}
+.fv{font-size:12px;font-weight:700;font-family:'Space Mono',monospace;color:var(--text);}
+.fv.g{color:var(--gold);}
+.fv.p{color:var(--purple);}
+.fv.free{color:#f87171;}
+.navrow{display:flex;justify-content:space-between;align-items:center;margin-top:24px;padding-top:20px;border-top:1px solid var(--b);}
+.btn-back{background:transparent;color:var(--m2);border:1.5px solid var(--b2);padding:10px 18px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif;transition:all 0.18s;}
+.btn-back:hover{border-color:var(--gold);color:var(--gold);}
+.btn-back:disabled{opacity:0.3;cursor:not-allowed;}
+.btn-next{background:linear-gradient(135deg,#b8902a,#c9a84c);color:#03050c;border:none;padding:11px 22px;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;font-family:'Space Grotesk',sans-serif;display:flex;align-items:center;gap:7px;transition:all 0.18s;}
+.btn-next:hover{transform:translateY(-1px);box-shadow:0 7px 22px rgba(201,168,76,0.3);}
+.btn-next:disabled{opacity:0.3;cursor:not-allowed;transform:none;box-shadow:none;}
+.btn-confirm{background:linear-gradient(135deg,#c9a84c,#a07830);color:#03050c;border:none;padding:12px 22px;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;font-family:'Space Grotesk',sans-serif;display:flex;align-items:center;gap:7px;transition:all 0.18s;}
+.btn-confirm:hover{transform:translateY(-1px);box-shadow:0 7px 26px rgba(201,168,76,0.35);}
+.btn-confirm:disabled{opacity:0.3;cursor:not-allowed;transform:none;box-shadow:none;}
+.rvtbl{background:#040508;border:1px solid var(--b);border-radius:11px;overflow:hidden;margin-bottom:15px;}
+.rvrow{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--b);}
+.rvrow:last-child{border-bottom:none;}
+.rk{font-size:12px;color:var(--m2);}
+.rv{font-size:12px;font-weight:700;font-family:'Space Mono',monospace;text-align:right;max-width:55%;word-break:break-all;}
+.alert{border-radius:9px;padding:11px 14px;margin-bottom:12px;font-size:12px;line-height:1.65;}
+.a-amber{background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.18);color:#ca8a04;}
+.a-green{background:rgba(0,217,139,0.06);border:1px solid rgba(0,217,139,0.22);color:var(--green);}
+.a-red{background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.18);color:#f87171;}
+.a-blue{background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.18);color:#60a5fa;}
+.a-gold{background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.2);color:var(--gold);}
+.txstep{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--b);font-size:12px;}
+.txstep:last-child{border-bottom:none;}
+.txdot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.td-p{background:var(--m);opacity:0.25;}
+.td-a{background:var(--gold);box-shadow:0 0 7px rgba(201,168,76,0.5);animation:pulse 1s infinite;}
+.td-d{background:var(--green);}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+.txlbl{flex:1;color:var(--m2);}
+.txlbl.active{color:var(--text);font-weight:600;}
+.txlbl.done{color:var(--green);}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(201,168,76,0.2);border-top-color:var(--gold);border-radius:50%;animation:spin 0.7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.rrow{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:8px;align-items:center;}
+.btn-rm{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.16);color:#f87171;border-radius:8px;padding:9px 12px;cursor:pointer;font-size:14px;line-height:1;}
+.btn-add{width:100%;background:transparent;border:1.5px dashed var(--b2);color:var(--m);border-radius:10px;padding:10px;cursor:pointer;font-size:12px;font-weight:700;font-family:'Space Grotesk',sans-serif;transition:all 0.18s;margin-top:3px;}
+.btn-add:hover{border-color:var(--gold);color:var(--gold);}
+.sscreen{text-align:center;padding:14px 0;}
+.semoji{font-size:50px;margin-bottom:13px;}
+.stitle{font-size:24px;font-weight:800;letter-spacing:-0.025em;margin-bottom:7px;color:var(--gold);}
+.ssub{font-size:13px;color:var(--m2);line-height:1.7;margin-bottom:20px;}
+.txcard{background:var(--s2);border:1px solid var(--b);border-radius:9px;padding:12px 14px;margin-bottom:8px;text-align:left;}
+.txcl{font-size:9px;color:var(--m);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.08em;font-weight:700;font-family:'Space Mono',monospace;}
+.txlink{font-family:'Space Mono',monospace;font-size:10px;color:#60a5fa;word-break:break-all;text-decoration:none;}
+.txlink:hover{text-decoration:underline;}
+.sbar{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:18px;}
+.scard{background:var(--s2);border:1px solid var(--b);border-radius:9px;padding:11px;text-align:center;}
+.scl{font-size:9px;color:var(--m);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:3px;font-family:'Space Mono',monospace;}
+.scv{font-size:15px;font-weight:800;color:var(--gold);font-family:'Space Mono',monospace;}
+.swap-wrap{max-width:500px;margin:0 auto;padding:44px 22px 80px;}
+.swap-hdr{text-align:center;margin-bottom:28px;}
+.swap-title{font-size:26px;font-weight:800;letter-spacing:-0.03em;margin-bottom:7px;}
+.swap-acc{color:var(--gold);}
+.swap-sub{font-size:13px;color:var(--m2);line-height:1.6;}
+#jup-embed{border-radius:18px;overflow:hidden;border:1px solid var(--b2);box-shadow:0 40px 100px rgba(0,0,0,0.5);}
+.why-box{margin-top:20px;background:var(--s);border:1px solid var(--b);border-radius:14px;padding:20px;}
+.why-title{font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px;font-family:'Space Mono',monospace;}
+.why-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:9px;}
+.why-row:last-child{margin-bottom:0;}
+.why-ico{font-size:16px;flex-shrink:0;}
+.why-txt{font-size:12px;color:var(--m2);line-height:1.55;}
+.why-txt strong{color:var(--text);}
+@media(max-width:550px){header{padding:0 14px;}.logo-title{font-size:12px;}.ticker{display:none;}.card{padding:20px 16px;}.wrap,.swap-wrap{padding:26px 13px 60px;}.ftog,.g2{grid-template-columns:1fr;}.sbar{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo" id="saturnLogo">
+    <div class="logo-ico">
+      <svg viewBox="0 0 36 36" fill="none">
+        <circle cx="18" cy="18" r="16" stroke="#c9a84c" stroke-width="1.2" opacity="0.3"/>
+        <circle cx="18" cy="18" r="11" stroke="#c9a84c" stroke-width="1.8" opacity="0.7"/>
+        <ellipse cx="18" cy="18" rx="17" ry="5.5" stroke="#c9a84c" stroke-width="1" opacity="0.4" transform="rotate(-20 18 18)"/>
+        <circle cx="18" cy="18" r="5" fill="#c9a84c" opacity="0.9"/>
+        <circle cx="18" cy="18" r="2.5" fill="#03050c"/>
+      </svg>
+    </div>
+    <div class="logo-name"><span class="logo-title">Saturn Lock</span><span class="logo-sub">Token Locker · V1.2</span></div>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" id="tabLock" onclick="switchPage('lock')">🔒 Lock</button>
+    <button class="nav-tab" id="tabSwap" onclick="switchPage('swap')">⚡ Swap</button>
+  </div>
+  <div class="hdr-right">
+    <div class="dev-badge" id="devBadge" onclick="openDevStatus()"><span class="dev-badge-dot"></span>DEV</div>
+    <div class="ticker"><span class="tdot"></span><span class="tsym">$SATURN</span><span class="tprice" id="satPrice">$0.0050</span></div>
+    <button class="wallet-btn" id="walletBtn" onclick="openWallet()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M21 18v1a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v1"/><polyline points="15 3 21 9 15 15"/><line x1="21" y1="9" x2="7" y2="9"/></svg>
+      Connect Wallet
+    </button>
+  </div>
+</header>
+<div class="modal-bd" id="wModal" onclick="if(event.target===this)closeWallet()">
+  <div class="modal">
+    <div class="mhdr"><div class="mtitle">Connect Wallet</div><button class="mclose" onclick="closeWallet()">x</button></div>
+    <p class="msub">Connect your Solana wallet to create locks.</p>
+    <div class="wlist" id="wList"></div>
+  </div>
+</div>
+<div class="modal-bd" id="devModal" onclick="if(event.target===this)closeDevModal()">
+  <div class="modal dev-modal-inner">
+    <div class="mhdr"><div></div><button class="mclose" onclick="closeDevModal()">x</button></div>
+    <div class="dev-icon-big">🛸</div>
+    <div class="dev-title">Developer Access</div>
+    <div class="dev-sub">Enter promo code to unlock dev mode</div>
+    <div class="dev-perks">
+      <div class="dp-title">Dev Mode Perks</div>
+      <div class="dp-row"><span>✓</span> Zero lock creation fees</div>
+      <div class="dp-row"><span>✓</span> Zero 0.20% protocol token fee</div>
+      <div class="dp-row"><span>✓</span> Only pay Solana network gas</div>
+    </div>
+    <input class="dev-inp" id="devCodeInput" type="password" placeholder="Enter promo code..." onkeydown="if(event.key==='Enter')submitDevCode()"/>
+    <div class="dev-err" id="devError"></div>
+    <button class="btn-dev" onclick="submitDevCode()">Unlock Dev Access</button>
+  </div>
+</div>
+<div class="modal-bd" id="devStatusModal" onclick="if(event.target===this)document.getElementById('devStatusModal').classList.remove('open')">
+  <div class="modal dev-modal-inner">
+    <div class="mhdr"><div class="mtitle" style="color:#f87171;">🛸 Dev Mode</div><button class="mclose" onclick="document.getElementById('devStatusModal').classList.remove('open')">x</button></div>
+    <div class="dev-status-panel">
+      <div class="dsp-title">Active Fee Overrides</div>
+      <div class="dsp-row"><span class="dpk">Lock creation fee</span><span class="dpv free">FREE</span></div>
+      <div class="dsp-row"><span class="dpk">Protocol token fee (0.20%)</span><span class="dpv free">FREE</span></div>
+      <div class="dsp-row"><span class="dpk">Solana network gas</span><span class="dpv always">Always paid</span></div>
+    </div>
+    <div class="dev-addr-box">
+      <div class="dab-title">Dev Deposit Address</div>
+      <div class="dab-addr">F36PUYop1oCsBQMyP8aHncGppiGd1xyUm8k75PtHAoN3</div>
+      <div class="dab-note">Send SOL here to fund dev testing. No fees deducted.</div>
+    </div>
+    <button class="btn-deact" onclick="deactivateDev()">Deactivate Dev Mode</button>
+  </div>
+</div>
+<div class="page active" id="pageLock">
+  <div class="wrap">
+    <div class="dev-banner" id="devBanner">
+      <span style="font-size:18px;">🛸</span>
+      <div class="dev-banner-text"><strong>DEV MODE ACTIVE</strong> — All protocol fees waived. Only Solana gas applies.</div>
+    </div>
+    <div class="banner">
+      <div class="banner-l"><span style="font-size:22px;">🪐</span><div><div class="bt">Save 50% with $SATURN</div><div class="bs">Pay lock fees in $SATURN or use dev promo for free</div></div></div>
+      <div class="bpill">50% OFF WITH $SATURN</div>
+    </div>
+    <div class="steps" id="stepBar"></div>
+    <div class="card" id="mainCard"></div>
+  </div>
+</div>
+<div class="page" id="pageSwap">
+  <div class="swap-wrap">
+    <div class="swap-hdr">
+      <div class="swap-title">Swap SOL to <span class="swap-acc">$SATURN</span></div>
+      <div class="swap-sub">Get $SATURN to save <strong>50%</strong> on lock fees. Powered by Jupiter.</div>
+    </div>
+    <div id="jup-embed"></div>
+    <div class="why-box">
+      <div class="why-title">Why $SATURN?</div>
+      <div class="why-row"><span class="why-ico">💸</span><div class="why-txt"><strong>50% fee discount</strong> on every lock creation</div></div>
+      <div class="why-row"><span class="why-ico">🤖</span><div class="why-txt"><strong>50% off agent subscriptions</strong> on Saturn Agents</div></div>
+      <div class="why-row"><span class="why-ico">🌐</span><div class="why-txt"><a href="agents.html" style="color:var(--gold);">Browse AI Trading Agents →</a></div></div>
+    </div>
+  </div>
+</div>
+<script>
+const CFG={SATURN_MINT:"PASTE_SATURN_MINT_HERE",SATURN_DECIMALS:9,FEE_WALLET:"F36PUYop1oCsBQMyP8aHncGppiGd1xyUm8k75PtHAoN3",LOCK_SOL_FEE:0.5,LOCK_TOKEN_PC:0.002,SATURN_DISCOUNT:0.5,RPC:"https://api.mainnet-beta.solana.com",solPriceUSD:150,saturnPriceUSD:0.005};
+const DEV_CODE="boss2026";const DEV_KEY="saturn_dev_v12";
+let tapCount=0,tapTimer=null;
+function initDevMode(){
+  if(sessionStorage.getItem(DEV_KEY)==="true")applyDev(true);
+  const logo=document.getElementById("saturnLogo");
+  if(!logo)return;
+  logo.addEventListener("click",()=>{tapCount++;clearTimeout(tapTimer);tapTimer=setTimeout(()=>{tapCount=0;},3000);if(tapCount>=5){tapCount=0;openDevModal();}});
+}
+function openDevModal(){document.getElementById("devModal").classList.add("open");setTimeout(()=>document.getElementById("devCodeInput").focus(),100);}
+function closeDevModal(){document.getElementById("devModal").classList.remove("open");document.getElementById("devCodeInput").value="";document.getElementById("devError").textContent="";}
+function submitDevCode(){
+  const v=document.getElementById("devCodeInput").value.trim().toLowerCase();
+  if(v===DEV_CODE){sessionStorage.setItem(DEV_KEY,"true");closeDevModal();applyDev(true);showToast("🛸 Dev mode ON! All protocol fees waived.");}
+  else{document.getElementById("devError").textContent="Invalid code. Try again.";document.getElementById("devCodeInput").value="";}
+}
+function openDevStatus(){document.getElementById("devStatusModal").classList.add("open");}
+function deactivateDev(){sessionStorage.removeItem(DEV_KEY);document.getElementById("devStatusModal").classList.remove("open");applyDev(false);showToast("Dev mode deactivated.");}
+function isDevMode(){return sessionStorage.getItem(DEV_KEY)==="true";}
+function applyDev(on){
+  const b=document.getElementById("devBadge");if(b)b.style.display=on?"flex":"none";
+  const db=document.getElementById("devBanner");if(db)db.className="dev-banner"+(on?" show":"");
+  render();
+}
+function showToast(msg){const t=document.createElement("div");t.style.cssText="position:fixed;bottom:24px;right:24px;z-index:999;background:#1a2236;border:1px solid var(--gold);color:var(--text);border-radius:12px;padding:13px 18px;font-size:13px;font-weight:600;font-family:'Space Grotesk',sans-serif;box-shadow:0 8px 28px rgba(0,0,0,0.5);max-width:300px;";t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),4000);}
+const WALLETS=[
+  {id:"phantom",name:"Phantom",color:"#ab9ff2",detect:()=>!!window.solana?.isPhantom,connect:async()=>{const r=await window.solana.connect();return r.publicKey.toString();},sign:()=>window.solana,url:"https://phantom.app/"},
+  {id:"solflare",name:"Solflare",color:"#fc7227",detect:()=>!!window.solflare?.isSolflare,connect:async()=>{await window.solflare.connect();return window.solflare.publicKey.toString();},sign:()=>window.solflare,url:"https://solflare.com/"},
+  {id:"backpack",name:"Backpack",color:"#e33e3f",detect:()=>!!(window.backpack?.isBackpack||window.xnft?.solana),connect:async()=>{const b=window.backpack||window.xnft?.solana;await b.connect();return b.publicKey.toString();},sign:()=>window.backpack||window.xnft?.solana,url:"https://backpack.app/"},
+  {id:"coinbase",name:"Coinbase Wallet",color:"#0052ff",detect:()=>!!window.coinbaseSolana,connect:async()=>{const r=await window.coinbaseSolana.connect();return r.publicKey.toString();},sign:()=>window.coinbaseSolana,url:"https://www.coinbase.com/wallet"},
+  {id:"brave",name:"Brave Wallet",color:"#ff6000",detect:()=>!!(window.braveSolana||window.solana?.isBraveWallet),connect:async()=>{const w=window.braveSolana||window.solana;const r=await w.connect();return r.publicKey.toString();},sign:()=>window.braveSolana||window.solana,url:"https://brave.com/wallet/"},
+  {id:"trust",name:"Trust Wallet",color:"#3375BB",detect:()=>!!window.trustwallet?.solana,connect:async()=>{const r=await window.trustwallet.solana.connect();return r.publicKey.toString();},sign:()=>window.trustwallet?.solana,url:"https://trustwallet.com/"},
+];
+let W={id:null,pubkey:null};
+const STEPS=["Type","Config","Recipients","Review"];
+let S={step:1,lockType:null,tokenMint:"",tokenAmount:"",duration:"30",durationUnit:"days",unlockPrice:"",recipients:[{address:""}],feeMethod:"sol",txSig:null,txSig2:null,loading:false,loadingStep:0,error:""};
+function satForFee(){return Math.ceil(CFG.LOCK_SOL_FEE*CFG.solPriceUSD*CFG.SATURN_DISCOUNT/CFG.saturnPriceUSD);}
+function calcFee(){return isDevMode()?0:+((parseFloat(S.tokenAmount)||0)*CFG.LOCK_TOKEN_PC).toFixed(6);}
+function calcNet(){return +((parseFloat(S.tokenAmount)||0)-calcFee()).toFixed(6);}
+function openWallet(){
+  if(W.pubkey){if(confirm("Disconnect?"))disconnect();return;}
+  const det=WALLETS.filter(w=>w.detect&&w.detect()),not=WALLETS.filter(w=>!w.detect||!w.detect());
+  let h="";
+  if(det.length){h+='<div class="wdiv">Detected</div>';h+=det.map(w=>wHTML(w,true)).join("");}
+  if(not.length){h+='<div class="wdiv">Install to use</div>';h+=not.map(w=>wHTML(w,false)).join("");}
+  document.getElementById("wList").innerHTML=h;
+  document.getElementById("wModal").classList.add("open");
+}
+function wHTML(w,det){return '<div class="wopt '+(det?"det":"")+'" onclick="selW(\''+w.id+'\')"><div class="wicon" style="background:'+w.color+'20;border:1px solid '+w.color+'30">💼</div><div class="winfo"><div class="wname">'+w.name+'</div><div class="wstatus '+(det?"det":"")+'">'+( det?"Detected · Ready":"Not installed")+'</div></div><div style="color:var(--m);font-size:14px;">'+(det?"›":"↗")+'</div></div>';}
+async function selW(id){
+  const w=WALLETS.find(x=>x.id===id);if(!w)return;
+  if(!w.detect||!w.detect()){window.open(w.url,"_blank");return;}
+  try{const pk=await w.connect();W={id,pubkey:pk};closeWallet();updateBtn();render();}catch(e){alert("Failed: "+(e.message||"Unknown"));}
+}
+function closeWallet(){document.getElementById("wModal").classList.remove("open");}
+function disconnect(){W={id:null,pubkey:null};updateBtn();render();}
+function updateBtn(){
+  const btn=document.getElementById("walletBtn");
+  if(W.pubkey){btn.className="wallet-btn conn";btn.innerHTML='<span class="wdot"></span>'+W.pubkey.slice(0,4)+"..."+W.pubkey.slice(-4);}
+  else{btn.className="wallet-btn";btn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M21 18v1a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v1"/><polyline points="15 3 21 9 15 15"/><line x1="21" y1="9" x2="7" y2="9"/></svg>Connect Wallet';}
+}
+async function sendSOL(conn,amt){
+  const from=new solanaWeb3.PublicKey(W.pubkey);const to=new solanaWeb3.PublicKey(CFG.FEE_WALLET);
+  const {blockhash}=await conn.getLatestBlockhash();
+  const tx=new solanaWeb3.Transaction({recentBlockhash:blockhash,feePayer:from});
+  tx.add(solanaWeb3.SystemProgram.transfer({fromPubkey:from,toPubkey:to,lamports:Math.round(amt*solanaWeb3.LAMPORTS_PER_SOL)}));
+  const w=WALLETS.find(x=>x.id===W.id);
+  const signed=await w.sign().signTransaction(tx);
+  return conn.sendRawTransaction(signed.serialize());
+}
+async function sendSPL(conn,mintStr,amount,decimals){
+  const TPK=new solanaWeb3.PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
+  const ATPK=new solanaWeb3.PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJe1bRS");
+  const from=new solanaWeb3.PublicKey(W.pubkey);const mint=new solanaWeb3.PublicKey(mintStr);const toOwner=new solanaWeb3.PublicKey(CFG.FEE_WALLET);
+  const bigAmt=BigInt(Math.round(amount*(10**decimals)));
+  const ata=o=>solanaWeb3.PublicKey.findProgramAddressSync([o.toBuffer(),TPK.toBuffer(),mint.toBuffer()],ATPK)[0];
+  const fromATA=ata(from);const toATA=ata(toOwner);
+  const {blockhash}=await conn.getLatestBlockhash();
+  const tx=new solanaWeb3.Transaction({recentBlockhash:blockhash,feePayer:from});
+  if(!await conn.getAccountInfo(toATA)){tx.add(new solanaWeb3.TransactionInstruction({programId:ATPK,keys:[{pubkey:from,isSigner:true,isWritable:true},{pubkey:toATA,isSigner:false,isWritable:true},{pubkey:toOwner,isSigner:false,isWritable:false},{pubkey:mint,isSigner:false,isWritable:false},{pubkey:solanaWeb3.SystemProgram.programId,isSigner:false,isWritable:false},{pubkey:TPK,isSigner:false,isWritable:false}],data:Buffer.from([])}));}
+  const td=Buffer.alloc(9);td[0]=3;td.writeBigUInt64LE(bigAmt,1);
+  tx.add(new solanaWeb3.TransactionInstruction({programId:TPK,keys:[{pubkey:fromATA,isSigner:false,isWritable:true},{pubkey:toATA,isSigner:false,isWritable:true},{pubkey:from,isSigner:true,isWritable:false}],data:td}));
+  const w=WALLETS.find(x=>x.id===W.id);
+  const signed=await w.sign().signTransaction(tx);
+  return conn.sendRawTransaction(signed.serialize());
+}
+async function runConfirm(){
+  if(!W.pubkey){S.error="Connect your wallet first.";render();return;}
+  // DEV MODE: skip all protocol fees — only gas is paid by network
+  if(isDevMode()){
+    S.loading=true;S.error="";S.loadingStep=1;render();
+    await new Promise(r=>setTimeout(r,1200));
+    S.loadingStep=2;render();
+    await new Promise(r=>setTimeout(r,800));
+    S.step=5;S.loading=false;render();
+    return;
+  }
+  S.loading=true;S.error="";S.loadingStep=1;render();
+  const conn=new solanaWeb3.Connection(CFG.RPC,"confirmed");
+  try{
+    let sig1;
+    if(S.feeMethod==="sol")sig1=await sendSOL(conn,CFG.LOCK_SOL_FEE);
+    else sig1=await sendSPL(conn,CFG.SATURN_MINT,satForFee(),CFG.SATURN_DECIMALS);
+    await conn.confirmTransaction(sig1,"confirmed");
+    S.txSig=sig1;S.loadingStep=2;render();
+    try{const sig2=await sendSPL(conn,S.tokenMint,calcFee(),6);await conn.confirmTransaction(sig2,"confirmed");S.txSig2=sig2;}catch(e){console.warn("Protocol fee skipped:",e.message);}
+    S.loadingStep=3;S.step=5;
+  }catch(e){S.error=e.message||"Transaction failed.";}
+  finally{S.loading=false;render();}
+}
+function switchPage(p){
+  document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));
+  document.querySelectorAll(".nav-tab").forEach(x=>x.classList.remove("active"));
+  document.getElementById(p==="lock"?"pageLock":"pageSwap").classList.add("active");
+  document.getElementById(p==="lock"?"tabLock":"tabSwap").classList.add("active");
+  if(p==="swap")initJup();
+}
+function initJup(){
+  if(!window.Jupiter){setTimeout(initJup,600);return;}
+  window.Jupiter.init({displayMode:"integrated",integratedTargetId:"jup-embed",endpoint:CFG.RPC,defaultExplorer:"Solscan",formProps:{initialInputMint:"So11111111111111111111111111111111111111112",initialOutputMint:CFG.SATURN_MINT==="PASTE_SATURN_MINT_HERE"?"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v":CFG.SATURN_MINT}});
+}
+function render(){renderSteps();renderCard();}
+function renderSteps(){
+  const bar=document.getElementById("stepBar");if(!bar)return;
+  bar.innerHTML=STEPS.map((s,i)=>{const n=i+1,done=n<S.step,act=n===S.step;return '<div class="si"><div class="sc '+(done?"done":act?"act":"")+'">'+( done?"✓":n)+'</div><div class="sl '+(act?"act":"")+'">'+s+'</div></div>'+(i<STEPS.length-1?'<div class="scon '+(done?"done":"")+'"></div>':"");}).join("");
+}
+function renderCard(){
+  const card=document.getElementById("mainCard");if(!card)return;
+  if(S.step===5){card.innerHTML=renderSuccess();return;}
+  if(S.loading){card.innerHTML=renderLoading();return;}
+  const fns=[null,step1,step2,step3,step4];
+  card.innerHTML=fns[Math.min(S.step,4)]();
+}
+function step1(){
+  const lc=(t,ico,ti,de,tags,beta=false)=>'<div class="lcard '+(S.lockType===t?"sel":"")+'" onclick="pick(\''+t+'\')"><div class="lchd"><div class="lcico">'+ico+'</div><div style="display:flex;align-items:center;gap:6px;">'+(beta?'<span class="beta-b">BETA</span>':'')+'<div class="radio '+(S.lockType===t?"chk":"")+'"></div></div></div><div class="lctitle">'+ti+'</div><div class="lcdesc">'+de+'</div><div class="tags"><span class="tl">Useful for</span>'+tags+'</div></div>';
+  return '<div class="snum">STEP 01</div><div class="ctitle">Choose Lock Type</div><div class="csub">Select how your meme tokens get locked.</div><div class="lcards">'+lc("time","⏱","Time-Based Lock","Lock any SPL token for a fixed period. Auto-releases when the timer hits zero.",'<span class="tg tgg">💎 Diamond Hands</span><span class="tg tgg">LP Tokens</span>')+lc("price","📈","Price-Based Lock","Lock until your target price is hit. Saturn monitors price feeds and releases automatically.",'<span class="tg tgb">🚀 Moonbags</span>',true)+'</div><div class="navrow"><div></div><button class="btn-next" onclick="go(2)" '+(! S.lockType?"disabled":"")+'">Next Step →</button></div>';
+}
+function step2(){
+  const sAmt=satForFee();const sUSD=(sAmt*CFG.saturnPriceUSD).toFixed(2);const solUSD=(CFG.LOCK_SOL_FEE*CFG.solPriceUSD).toFixed(2);
+  const dev=isDevMode();
+  let feeSection='';
+  if(dev){
+    feeSection='<div class="alert a-red" style="margin-bottom:16px;">🛸 <strong>DEV MODE</strong> — Creation fee and protocol token fee both waived. Only Solana gas applies.</div>';
+  } else {
+    feeSection='<span class="ftlbl">How would you like to pay the creation fee?</span><div class="ftog"><div class="fopt '+(S.feeMethod==="sol"?"fsol":"")+'" onclick="setFee(\'sol\')"><div class="fohd"><span class="foico">◎</span><div class="frdot"></div></div><div class="fotitle">Pay with SOL</div><div class="foamt sol">'+CFG.LOCK_SOL_FEE+' SOL</div><div class="fosub">≈ $'+solUSD+'</div></div><div class="fopt '+(S.feeMethod==="sat"?"fsat":"")+'" onclick="setFee(\'sat\')" style="position:relative;"><div class="save-p">SAVE 50%</div><div class="fohd"><span class="foico">🪐</span><div class="frdot"></div></div><div class="fotitle">Pay with $SATURN</div><div class="foamt sat">'+sAmt.toLocaleString()+' SATURN</div><div class="fosub">≈ $'+sUSD+' · <a href="#" onclick="switchPage(\'swap\');return false;" style="color:var(--gold)">Get $SATURN ↗</a></div></div></div>';
+  }
+  return '<div class="snum">STEP 02</div><div class="ctitle">Configuration</div><div class="csub">Set your token and lock parameters.</div><div class="fg"><label class="fl">Token Mint Address</label><input class="fi" placeholder="SPL token mint..." value="'+S.tokenMint+'" oninput="S.tokenMint=this.value"/></div><div class="fg"><label class="fl">Amount to Lock</label><input class="fi" type="number" min="0" placeholder="0.00" value="'+S.tokenAmount+'" oninput="S.tokenAmount=this.value;updF()"/></div>'+(S.lockType==="time"?'<div class="g2"><div class="fg"><label class="fl">Duration</label><input class="fi" type="number" min="1" value="'+S.duration+'" oninput="S.duration=this.value"/></div><div class="fg"><label class="fl">Unit</label><select class="fi" onchange="S.durationUnit=this.value"><option value="days" '+(S.durationUnit==="days"?"selected":"")+'>Days</option><option value="weeks" '+(S.durationUnit==="weeks"?"selected":"")+'>Weeks</option><option value="months" '+(S.durationUnit==="months"?"selected":"")+'>Months</option><option value="years" '+(S.durationUnit==="years"?"selected":"")+'>Years</option></select></div></div>':'<div class="fg"><label class="fl">Unlock Price (USD)</label><input class="fi" type="number" step="0.0001" placeholder="e.g. 0.0050" value="'+S.unlockPrice+'" oninput="S.unlockPrice=this.value"/></div>')+feeSection+'<div class="fbox"><div class="fbtitle">📋 Fee Breakdown</div><div class="fline"><span class="fk">Creation fee</span><span class="fv '+(dev?"free":(S.feeMethod==="sat"?"g":"p"))+'">'+(dev?"FREE (dev mode)":(S.feeMethod==="sol"?CFG.LOCK_SOL_FEE+" SOL":sAmt.toLocaleString()+" $SATURN"))+'</span></div><div class="fline"><span class="fk">Protocol fee (0.20%)</span><span class="fv '+(dev?"free":"")+'" id="feeT">'+(dev?"FREE (dev mode)":(calcFee()>0?calcFee()+" tokens":"—"))+'</span></div><div class="fline"><span class="fk">Net tokens locked</span><span class="fv g" id="feeN">'+(calcNet()>0?calcNet()+" tokens":"—")+'</span></div></div><div class="navrow"><button class="btn-back" onclick="go(1)">← Back</button><button class="btn-next" onclick="go(3)" '+(!S.tokenMint||!S.tokenAmount?"disabled":"")+'>Next Step →</button></div>';
+}
+function step3(){
+  return '<div class="snum">STEP 03</div><div class="ctitle">Recipients</div><div class="csub">Add wallets that receive tokens after unlock.</div><div id="rlist">'+S.recipients.map((r,i)=>'<div class="rrow"><input class="fi" placeholder="Wallet address '+(i+1)+'" value="'+r.address+'" oninput="S.recipients['+i+'].address=this.value"/>'+(S.recipients.length>1?'<button class="btn-rm" onclick="rmR('+i+')">×</button>':'')+'</div>').join('')+'</div><button class="btn-add" onclick="addR()">+ Add Recipient</button><div class="navrow"><button class="btn-back" onclick="go(2)">← Back</button><button class="btn-next" onclick="go(4)">Next Step →</button></div>';
+}
+function step4(){
+  const ld=S.lockType==="time"?S.duration+" "+S.durationUnit:"$"+S.unlockPrice;
+  const sAmt=satForFee();const dev=isDevMode();
+  const fLabel=dev?"FREE (dev mode)":(S.feeMethod==="sol"?CFG.LOCK_SOL_FEE+" SOL":sAmt.toLocaleString()+" $SATURN (50% off!)");
+  return '<div class="snum">STEP 04</div><div class="ctitle">Review & Confirm</div><div class="csub">Double-check before signing.</div><div class="rvtbl"><div class="rvrow"><span class="rk">Lock Type</span><span class="rv">'+(S.lockType==="price"?"Price-Based":"Time-Based")+'</span></div><div class="rvrow"><span class="rk">Token Mint</span><span class="rv">'+(S.tokenMint||"—")+'</span></div><div class="rvrow"><span class="rk">Lock Amount</span><span class="rv">'+(S.tokenAmount||"—")+' tokens</span></div><div class="rvrow"><span class="rk">'+(S.lockType==="time"?"Duration":"Unlock Price")+'</span><span class="rv">'+ld+'</span></div><div class="rvrow"><span class="rk">Recipients</span><span class="rv">'+S.recipients.filter(r=>r.address).length+'</span></div><div class="rvrow"><span class="rk">Net Tokens Locked</span><span class="rv" style="color:var(--gold)">'+calcNet()+'</span></div></div><div class="fbox"><div class="fbtitle">💸 Fees on Confirm</div><div class="fline"><span class="fk">Creation fee</span><span class="fv '+(dev?"free":(S.feeMethod==="sat"?"g":"p"))+'">'+fLabel+'</span></div><div class="fline"><span class="fk">Protocol fee (0.20%)</span><span class="fv '+(dev?"free":"")+'">'+( dev?"FREE":""+calcFee()+" tokens")+'</span></div></div>'+(S.error?'<div class="alert a-red">⚠️ '+S.error+'</div>':'')+(dev?'<div class="alert a-red">🛸 <strong>Dev Mode</strong> — No fees charged. Solana gas only.</div>':'<div class="alert a-amber">⚠️ Wallet will prompt to approve '+(S.feeMethod==="sol"?CFG.LOCK_SOL_FEE+" SOL":sAmt.toLocaleString()+" $SATURN")+'.</div>')+(!W.pubkey?'<div class="alert a-blue">🔌 Connect your wallet to proceed.</div>':'')+'<div class="navrow"><button class="btn-back" onclick="go(3)">← Back</button><button class="btn-confirm" onclick="runConfirm()" '+(!W.pubkey||S.loading?"disabled":"")+'>🔒 '+(dev?"Lock Free (Dev)":"Sign & Lock")+'</button></div>';
+}
+function renderLoading(){
+  const dev=isDevMode();
+  const txs=dev?["Processing lock (dev mode — no fees)...","Finalizing lock on-chain..."]:[(S.feeMethod==="sol"?"Sending 0.5 SOL creation fee...":"Sending $SATURN creation fee (50% off)..."),"Sending 0.20% protocol token fee...","Confirming on-chain..."];
+  return '<div class="snum">PROCESSING</div><div class="ctitle">'+(dev?"Locking (Dev Mode)...":"Locking Tokens...")+'</div><div class="csub">'+(dev?"Processing your free dev lock...":"Approve transactions in your wallet.")+'</div><div style="margin-bottom:16px;">'+txs.map((t,i)=>{const st=i+1<S.loadingStep?"done":i+1===S.loadingStep?"active":"pending";return '<div class="txstep"><div class="txdot td-'+st.charAt(0)+'"></div><span class="txlbl '+st+'">'+t+'</span>'+(st==="done"?'<span style="color:var(--green);font-size:12px;">✓</span>':"")+(st==="active"?'<span class="spinner"></span>':"")+'</div>';}).join('')+'</div><div class="alert '+(dev?"a-red":"a-amber")+'">'+(dev?"🛸 Dev mode — no fees charged":"👛 Check your wallet for approval prompts")+'</div>';
+}
+function renderSuccess(){
+  const dev=isDevMode();
+  return '<div class="sscreen"><div class="semoji">🎉</div><div class="stitle">Tokens Locked!</div><div class="ssub">'+(dev?'Locked <strong>FREE</strong> in dev mode! Only Solana gas was charged.':(S.feeMethod==="sat"?'Saved <strong style="color:var(--gold)">50%</strong> by using $SATURN!':'Creation fee of <strong>'+CFG.LOCK_SOL_FEE+' SOL</strong> collected.'))+'</div>'+(S.txSig?'<div class="txcard"><div class="txcl">Creation Fee Tx</div><a class="txlink" href="https://solscan.io/tx/'+S.txSig+'" target="_blank">'+S.txSig+'</a></div>':'')+(!dev&&S.txSig2?'<div class="txcard"><div class="txcl">Protocol Fee Tx</div><a class="txlink" href="https://solscan.io/tx/'+S.txSig2+'" target="_blank">'+S.txSig2+'</a></div>':'')+(dev?'<div class="alert a-red">🛸 Dev mode — protocol fees waived this session</div>':'<div class="alert a-gold">✅ Fees sent to protocol treasury</div>')+'<div class="sbar"><div class="scard"><div class="scl">Lock Type</div><div class="scv" style="font-size:12px;">'+(S.lockType==="price"?"Price":"Time")+'</div></div><div class="scard"><div class="scl">Saved</div><div class="scv">'+(dev?"100%":(S.feeMethod==="sat"?"50%":"0%"))+'</div></div><div class="scard"><div class="scl">Mode</div><div class="scv" style="font-size:11px;">'+(dev?"DEV":"PUBLIC")+'</div></div></div><button class="btn-next" style="margin:20px auto 0;" onclick="resetApp()">🔒 New Lock</button></div>';
+}
+function updF(){const t=document.getElementById("feeT"),n=document.getElementById("feeN");if(t&&!isDevMode())t.textContent=calcFee()>0?calcFee()+" tokens":"—";if(n)n.textContent=calcNet()>0?calcNet()+" tokens":"—";}
+function pick(t){S.lockType=t;renderCard();}
+function go(n){S.step=n;S.error="";render();}
+function setFee(m){S.feeMethod=m;renderCard();}
+function addR(){S.recipients.push({address:""});renderCard();}
+function rmR(i){S.recipients.splice(i,1);renderCard();}
+function resetApp(){S={step:1,lockType:null,tokenMint:"",tokenAmount:"",duration:"30",durationUnit:"days",unlockPrice:"",recipients:[{address:""}],feeMethod:"sol",txSig:null,txSig2:null,loading:false,loadingStep:0,error:""};render();}
+async function fetchPrices(){try{const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd");const d=await r.json();CFG.solPriceUSD=d?.solana?.usd||150;}catch(e){}}
+fetchPrices();render();setInterval(fetchPrices,60000);
+window.addEventListener("load",async()=>{
+  initDevMode();
+  if(window.solana?.isPhantom){try{const r=await window.solana.connect({onlyIfTrusted:true});W={id:"phantom",pubkey:r.publicKey.toString()};updateBtn();render();}catch(e){}}
+  if(!W.pubkey&&window.solflare?.isSolflare){try{await window.solflare.connect();if(window.solflare.publicKey){W={id:"solflare",pubkey:window.solflare.publicKey.toString()};updateBtn();render();}}catch(e){}}
+});
+</script>
+</body>
+</html>

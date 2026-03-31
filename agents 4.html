@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Saturn Agents | AI Solana Trading Bots</title>
+<script src="https://unpkg.com/@solana/web3.js@1.95.3/lib/index.iife.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#03050c;--s:#07090f;--s2:#0c0f1a;--s3:#101420;--b:#131826;--b2:#1a2236;--gold:#c9a84c;--purple:#9945FF;--green:#00d98b;--red:#ef4444;--text:#dde6f5;--m:#2a3a52;--m2:#5a7090;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-serif;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse 80% 60% at 50% -15%,rgba(153,69,255,0.08) 0%,transparent 55%),radial-gradient(ellipse 60% 60% at 100% 100%,rgba(201,168,76,0.05) 0%,transparent 55%);pointer-events:none;}
+body::after{content:'';position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(153,69,255,0.018) 1px,transparent 1px),linear-gradient(90deg,rgba(153,69,255,0.018) 1px,transparent 1px);background-size:44px 44px;pointer-events:none;}
+header{position:sticky;top:0;z-index:300;background:rgba(3,5,12,0.95);backdrop-filter:blur(24px);border-bottom:1px solid var(--b);padding:0 28px;height:62px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;cursor:pointer;user-select:none;}
+.logo-ico{width:36px;height:36px;flex-shrink:0;}
+.logo-name{display:flex;flex-direction:column;gap:1px;}
+.logo-title{font-size:15px;font-weight:700;letter-spacing:-0.01em;line-height:1.1;}
+.logo-sub{font-size:9px;color:var(--purple);font-weight:700;letter-spacing:0.12em;text-transform:uppercase;font-family:'Space Mono',monospace;}
+.nav-tabs{display:flex;align-items:center;gap:2px;background:var(--s2);border:1px solid var(--b);border-radius:10px;padding:3px;}
+.nav-tab{padding:6px 14px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.15s;border:none;background:transparent;color:var(--m2);font-family:'Space Grotesk',sans-serif;}
+.nav-tab.active{background:var(--s3);color:var(--purple);}
+.hdr-right{display:flex;align-items:center;gap:8px;}
+.dev-badge{display:none;align-items:center;gap:6px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.35);border-radius:8px;padding:5px 10px;font-size:10px;font-weight:700;color:#f87171;font-family:'Space Mono',monospace;cursor:pointer;}
+.dev-badge-dot{width:6px;height:6px;border-radius:50%;background:#ef4444;animation:blink 1s infinite;}
+.ticker{display:flex;align-items:center;gap:6px;background:var(--s2);border:1px solid var(--b2);border-radius:8px;padding:5px 11px;font-size:12px;}
+.tdot{width:6px;height:6px;border-radius:50%;background:var(--gold);box-shadow:0 0 7px rgba(201,168,76,0.7);animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.3;}}
+.tsym{color:var(--m2);}.tprice{font-weight:700;color:var(--gold);font-family:'Space Mono',monospace;}
+.wallet-btn{display:flex;align-items:center;gap:7px;padding:8px 15px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;border:none;font-family:'Space Grotesk',sans-serif;transition:all 0.2s;background:linear-gradient(135deg,#9945FF,#7c3aed);color:white;}
+.wallet-btn:hover{transform:translateY(-1px);}
+.wallet-btn.conn{background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.28);color:var(--gold);}
+.wdot{width:7px;height:7px;border-radius:50%;background:var(--gold);}
+.modal-bd{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.8);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity 0.2s;}
+.modal-bd.open{opacity:1;pointer-events:all;}
+.modal{background:var(--s);border:1px solid var(--b2);border-radius:20px;padding:26px;width:100%;max-width:420px;transform:translateY(14px);transition:transform 0.2s;}
+.modal-bd.open .modal{transform:none;}
+.mhdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;}
+.mtitle{font-size:18px;font-weight:700;}
+.mclose{width:30px;height:30px;border-radius:7px;border:1px solid var(--b2);background:transparent;color:var(--m2);cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center;}
+.mclose:hover{background:var(--s2);}
+.msub{font-size:12px;color:var(--m2);margin-bottom:16px;}
+.wlist{display:flex;flex-direction:column;gap:7px;}
+.wopt{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;cursor:pointer;border:1.5px solid var(--b);background:var(--s2);transition:all 0.15s;}
+.wopt:hover{border-color:var(--b2);transform:translateX(2px);}
+.wopt.det{border-color:rgba(201,168,76,0.2);}
+.wopt.det:hover{border-color:var(--gold);}
+.wicon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.winfo{flex:1;}.wname{font-size:13px;font-weight:700;margin-bottom:1px;}
+.wstatus{font-size:10px;color:var(--m2);}.wstatus.det{color:var(--gold);}
+.wdiv{text-align:center;font-size:10px;color:var(--m);padding:6px 0;text-transform:uppercase;letter-spacing:0.08em;font-weight:700;}
+.dmod{max-width:360px;}
+.dicon{font-size:34px;text-align:center;margin-bottom:8px;}
+.dttl{font-size:17px;font-weight:800;text-align:center;color:var(--gold);margin-bottom:3px;}
+.dsub{font-size:12px;color:var(--m2);text-align:center;margin-bottom:14px;}
+.dperks{background:var(--s2);border:1px solid var(--b2);border-radius:10px;padding:12px;margin-bottom:12px;}
+.dpt{font-size:9px;font-weight:700;color:var(--m2);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px;font-family:'Space Mono',monospace;}
+.dpr{font-size:12px;color:var(--m2);margin-bottom:4px;display:flex;gap:6px;}
+.dpr span{color:var(--green);}
+.dinp{width:100%;background:var(--s2);border:1.5px solid var(--b2);border-radius:10px;padding:12px;color:var(--text);font-size:16px;font-family:'Space Mono',monospace;text-align:center;letter-spacing:0.08em;transition:border-color 0.2s;margin-bottom:8px;}
+.dinp:focus{outline:none;border-color:var(--gold);}
+.dinp::placeholder{color:var(--m);font-size:13px;letter-spacing:0.04em;}
+.derr{font-size:11px;color:#f87171;text-align:center;min-height:14px;margin-bottom:8px;}
+.btndev{width:100%;padding:11px;border-radius:10px;border:none;font-size:14px;font-weight:800;cursor:pointer;font-family:'Space Grotesk',sans-serif;background:linear-gradient(135deg,#c9a84c,#a07830);color:#03050c;}
+.dstp{background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.2);border-radius:11px;padding:13px;margin-bottom:11px;}
+.dstpt{font-size:10px;font-weight:700;color:#f87171;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:9px;font-family:'Space Mono',monospace;}
+.dstpr{display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px;}
+.dstpr:last-child{margin-bottom:0;}
+.dpk{color:var(--m2);}.dpv{font-weight:700;font-family:'Space Mono',monospace;}
+.dpv.free{color:var(--green);}.dpv.always{color:var(--m2);}
+.dabox{background:var(--s2);border:1px solid var(--b2);border-radius:9px;padding:11px;margin-bottom:11px;}
+.dabt{font-size:9px;font-weight:700;color:var(--m2);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:5px;font-family:'Space Mono',monospace;}
+.daba{font-size:10px;font-family:'Space Mono',monospace;color:var(--gold);word-break:break-all;line-height:1.5;}
+.dabn{font-size:10px;color:var(--m2);margin-top:4px;}
+.bdeact{width:100%;padding:9px;border-radius:8px;border:1px solid rgba(239,68,68,0.3);background:transparent;color:#f87171;font-size:12px;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif;}
+.bdeact:hover{background:rgba(239,68,68,0.1);}
+.page{position:relative;z-index:1;display:none;}
+.page.active{display:block;}
+.wrap{max-width:1100px;margin:0 auto;padding:40px 22px 80px;}
+.phdr{margin-bottom:26px;}
+.ptitle{font-size:26px;font-weight:800;letter-spacing:-0.03em;margin-bottom:5px;}
+.psub{font-size:13px;color:var(--m2);max-width:550px;line-height:1.6;}
+.devbar{display:none;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.22);border-radius:11px;padding:11px 16px;margin-bottom:18px;align-items:center;gap:10px;}
+.devbar.show{display:flex;}
+.devbar-txt{font-size:12px;color:#f87171;font-weight:600;}
+.devbar-txt strong{font-family:'Space Mono',monospace;}
+.filter-row{display:flex;align-items:center;gap:10px;margin-bottom:22px;flex-wrap:wrap;}
+.fbtn{padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--b);background:transparent;color:var(--m2);font-family:'Space Grotesk',sans-serif;transition:all 0.15s;}
+.fbtn.active{border-color:var(--purple);color:var(--purple);background:rgba(153,69,255,0.08);}
+.fbtn:hover{border-color:var(--b2);color:var(--text);}
+.agent-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.ac{background:var(--s);border:1px solid var(--b);border-radius:16px;padding:22px;transition:all 0.2s;position:relative;overflow:hidden;}
+.ac::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity 0.2s;pointer-events:none;background:radial-gradient(ellipse at top,rgba(153,69,255,0.06) 0%,transparent 65%);}
+.ac:hover{border-color:rgba(153,69,255,0.3);transform:translateY(-2px);}
+.ac:hover::before{opacity:1;}
+.ac.feat{border-color:rgba(201,168,76,0.3);}
+.ac.feat::before{background:radial-gradient(ellipse at top,rgba(201,168,76,0.06) 0%,transparent 65%);}
+.ac.feat:hover{border-color:var(--gold);}
+.fbadge{position:absolute;top:14px;right:14px;background:linear-gradient(135deg,#c9a84c,#a07830);color:#03050c;font-size:9px;font-weight:800;padding:3px 8px;border-radius:20px;font-family:'Space Mono',monospace;}
+.nbadge{position:absolute;top:14px;right:14px;background:rgba(0,217,139,0.15);border:1px solid rgba(0,217,139,0.3);color:var(--green);font-size:9px;font-weight:800;padding:3px 8px;border-radius:20px;font-family:'Space Mono',monospace;}
+.devbadge-ac{display:none;position:absolute;top:14px;left:14px;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#f87171;font-size:9px;font-weight:800;padding:3px 8px;border-radius:20px;font-family:'Space Mono',monospace;}
+.aico{font-size:28px;margin-bottom:12px;}
+.aname{font-size:16px;font-weight:700;margin-bottom:4px;}
+.adesc{font-size:12px;color:var(--m2);line-height:1.6;margin-bottom:14px;}
+.astats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.astat{background:var(--s2);border:1px solid var(--b);border-radius:8px;padding:9px 10px;text-align:center;}
+.astat-l{font-size:9px;color:var(--m);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:3px;font-family:'Space Mono',monospace;}
+.astat-v{font-size:13px;font-weight:700;font-family:'Space Mono',monospace;}
+.astat-v.gr{color:var(--green);}
+.astat-v.go{color:var(--gold);}
+.atags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px;}
+.atag{font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;text-transform:uppercase;background:rgba(153,69,255,0.1);border:1px solid rgba(153,69,255,0.2);color:#c084fc;}
+.aprow{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.aprice{font-size:13px;font-weight:800;font-family:'Space Mono',monospace;}
+.aprice .ps{color:var(--purple);}
+.aprice .or{font-size:10px;color:var(--m2);margin:0 4px;}
+.aprice .pa{color:var(--gold);}
+.aprice .pf{color:#f87171;}
+.aper{font-size:10px;color:var(--m2);}
+.bsub{width:100%;padding:10px;border-radius:9px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif;transition:all 0.18s;background:linear-gradient(135deg,#7c3aed,#9945FF);color:white;}
+.bsub:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(153,69,255,0.3);}
+.bsub.feat{background:linear-gradient(135deg,#c9a84c,#a07830);color:#03050c;}
+.bsub.feat:hover{box-shadow:0 6px 20px rgba(201,168,76,0.3);}
+.bsub.dv{background:linear-gradient(135deg,#ef4444,#b91c1c);color:white;}
+.bsub.dv:hover{box-shadow:0 6px 20px rgba(239,68,68,0.3);}
+.empty{text-align:center;padding:60px 20px;}
+.eico{font-size:48px;margin-bottom:16px;}
+.etitle{font-size:20px;font-weight:700;margin-bottom:8px;}
+.esub{font-size:14px;color:var(--m2);margin-bottom:22px;line-height:1.6;}
+.bpri{padding:12px 22px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:none;font-family:'Space Grotesk',sans-serif;background:linear-gradient(135deg,#9945FF,#7c3aed);color:white;}
+.ma-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;}
+.mac{background:var(--s);border:1px solid var(--b);border-radius:14px;padding:20px;}
+.mac-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.mac-l{display:flex;align-items:center;gap:10px;}
+.mac-ico{font-size:22px;}
+.mac-name{font-size:14px;font-weight:700;margin-bottom:2px;}
+.mac-per{font-size:11px;color:var(--m2);}
+.sdot{width:8px;height:8px;border-radius:50%;}
+.sdot.active{background:var(--green);box-shadow:0 0 8px rgba(0,217,139,0.5);}
+.sdot.paused{background:var(--gold);}
+.mac-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:14px;}
+.mst{background:var(--s2);border:1px solid var(--b);border-radius:7px;padding:8px;text-align:center;}
+.mst-l{font-size:9px;color:var(--m);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:2px;font-family:'Space Mono',monospace;}
+.mst-v{font-size:12px;font-weight:700;font-family:'Space Mono',monospace;}
+.mst-v.g{color:var(--green);}
+.mac-btns{display:flex;gap:7px;}
+.mbtn{flex:1;padding:8px;border-radius:8px;border:1.5px solid var(--b2);background:transparent;color:var(--m2);font-size:11px;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif;}
+.mbtn.pause{border-color:rgba(245,158,11,0.3);color:#f59e0b;}
+.mbtn.stop{border-color:rgba(239,68,68,0.3);color:var(--red);}
+.pmod{max-width:480px;}
+.pm-name{font-size:19px;font-weight:800;margin-bottom:3px;}
+.pm-sub{font-size:12px;color:var(--m2);margin-bottom:16px;}
+.pmtog{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px;}
+.popt{border-radius:11px;padding:13px;cursor:pointer;border:2px solid var(--b);background:var(--s2);transition:all 0.18s;position:relative;}
+.popt:hover{border-color:var(--b2);}
+.popt.psol{border-color:var(--purple);background:rgba(153,69,255,0.06);}
+.popt.psat{border-color:var(--gold);background:rgba(201,168,76,0.06);}
+.popt-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.pico{font-size:16px;}
+.ptit{font-size:12px;font-weight:700;margin-bottom:2px;}
+.pamt{font-size:15px;font-weight:700;font-family:'Space Mono',monospace;margin-bottom:1px;}
+.pamt.s{color:var(--purple);}.pamt.a{color:var(--gold);}
+.psub-t{font-size:10px;color:var(--m2);}
+.save-p{position:absolute;top:-8px;right:9px;background:linear-gradient(135deg,#c9a84c,#a07830);color:#03050c;font-size:9px;font-weight:800;padding:2px 7px;border-radius:20px;font-family:'Space Mono',monospace;}
+.frdot{width:14px;height:14px;border-radius:50%;border:2px solid var(--b2);display:flex;align-items:center;justify-content:center;}
+.popt.psol .frdot{background:var(--purple);border-color:var(--purple);}
+.popt.psat .frdot{background:var(--gold);border-color:var(--gold);}
+.popt.psol .frdot::after,.popt.psat .frdot::after{content:'';width:5px;height:5px;border-radius:50%;background:#03050c;}
+.cfg-sec{margin-bottom:14px;}
+.cfg-t{font-size:10px;font-weight:700;color:var(--m2);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:9px;font-family:'Space Mono',monospace;}
+.cfg-g{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.fg{margin-bottom:0;}
+.fl{font-size:10px;font-weight:700;color:var(--m2);display:block;margin-bottom:5px;letter-spacing:0.06em;text-transform:uppercase;}
+.fi{width:100%;background:var(--s2);border:1.5px solid var(--b);border-radius:9px;padding:10px 12px;color:var(--text);font-size:13px;font-family:'Space Grotesk',sans-serif;transition:border-color 0.2s;}
+.fi:focus{outline:none;border-color:var(--gold);}
+.fi::placeholder{color:var(--m);}
+select.fi{cursor:pointer;}
+.alert{border-radius:9px;padding:11px 14px;margin-bottom:12px;font-size:12px;line-height:1.65;}
+.a-amber{background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.18);color:#ca8a04;}
+.a-green{background:rgba(0,217,139,0.06);border:1px solid rgba(0,217,139,0.22);color:var(--green);}
+.a-red{background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.18);color:#f87171;}
+.bcpay{width:100%;padding:12px;border-radius:10px;border:none;font-size:14px;font-weight:800;cursor:pointer;font-family:'Space Grotesk',sans-serif;transition:all 0.18s;margin-top:4px;}
+.bcpay.sol{background:linear-gradient(135deg,#9945FF,#7c3aed);color:white;}
+.bcpay.sat{background:linear-gradient(135deg,#c9a84c,#a07830);color:#03050c;}
+.bcpay.dev{background:linear-gradient(135deg,#ef4444,#b91c1c);color:white;}
+.bcpay:hover{transform:translateY(-1px);}
+.bcpay:disabled{opacity:0.35;cursor:not-allowed;transform:none;}
+.tx-load{text-align:center;padding:20px 0;}
+.spin-big{display:inline-block;width:40px;height:40px;border:3px solid rgba(153,69,255,0.2);border-top-color:var(--purple);border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:14px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.l-title{font-size:16px;font-weight:700;margin-bottom:6px;}
+.l-sub{font-size:13px;color:var(--m2);}
+.nm-row{display:flex;gap:9px;margin-top:16px;}
+.bback{flex:1;padding:11px;border-radius:10px;background:transparent;border:1.5px solid var(--b2);color:var(--m2);font-size:13px;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif;}
+.bback:hover{border-color:var(--gold);color:var(--gold);}
+@media(max-width:768px){.agent-grid,.ma-grid{grid-template-columns:1fr;}header{padding:0 14px;}.wrap{padding:28px 13px 60px;}.ticker{display:none;}.pmtog,.cfg-g{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo" id="saturnLogo">
+    <div class="logo-ico">
+      <svg viewBox="0 0 36 36" fill="none">
+        <circle cx="18" cy="18" r="16" stroke="#9945FF" stroke-width="1.2" opacity="0.3"/>
+        <circle cx="18" cy="18" r="11" stroke="#9945FF" stroke-width="1.8" opacity="0.7"/>
+        <ellipse cx="18" cy="18" rx="17" ry="5.5" stroke="#9945FF" stroke-width="1" opacity="0.4" transform="rotate(-20 18 18)"/>
+        <circle cx="18" cy="18" r="5" fill="#9945FF" opacity="0.9"/>
+        <circle cx="18" cy="18" r="2.5" fill="#03050c"/>
+      </svg>
+    </div>
+    <div class="logo-name"><span class="logo-title">Saturn Agents</span><span class="logo-sub">AI Trading · V1.2</span></div>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" id="tabBrowse" onclick="switchPage('browse')">🤖 Browse</button>
+    <button class="nav-tab" id="tabMine" onclick="switchPage('mine')">📊 My Agents</button>
+  </div>
+  <div class="hdr-right">
+    <div class="dev-badge" id="devBadge" onclick="openDevStatus()"><span class="dev-badge-dot"></span>DEV</div>
+    <div class="ticker"><span class="tdot"></span><span class="tsym">$SATURN</span><span class="tprice">$0.0050</span></div>
+    <button class="wallet-btn" id="walletBtn" onclick="openWallet()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M21 18v1a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v1"/><polyline points="15 3 21 9 15 15"/><line x1="21" y1="9" x2="7" y2="9"/></svg>
+      Connect Wallet
+    </button>
+  </div>
+</header>
+
+<!-- WALLET MODAL -->
+<div class="modal-bd" id="wModal" onclick="if(event.target===this)closeWallet()">
+  <div class="modal"><div class="mhdr"><div class="mtitle">Connect Wallet</div><button class="mclose" onclick="closeWallet()">×</button></div>
+  <p class="msub">Connect to deploy and manage AI trading agents.</p>
+  <div class="wlist" id="wList"></div></div>
+</div>
+
+<!-- DEV LOGIN MODAL -->
+<div class="modal-bd" id="devModal" onclick="if(event.target===this)closeDevModal()">
+  <div class="modal dmod">
+    <div class="mhdr"><div></div><button class="mclose" onclick="closeDevModal()">×</button></div>
+    <div class="dicon">🛸</div><div class="dttl">Developer Access</div><div class="dsub">Enter promo code for dev mode</div>
+    <div class="dperks"><div class="dpt">Dev Perks</div>
+      <div class="dpr"><span>✓</span> Free agent subscriptions</div>
+      <div class="dpr"><span>✓</span> Zero protocol fees</div>
+      <div class="dpr"><span>✓</span> Only pay Solana gas</div>
+    </div>
+    <input class="dinp" id="devCodeInput" type="password" placeholder="Enter promo code..." onkeydown="if(event.key==='Enter')submitDevCode()"/>
+    <div class="derr" id="devError"></div>
+    <button class="btndev" onclick="submitDevCode()">Unlock Dev Access 🔓</button>
+  </div>
+</div>
+
+<!-- DEV STATUS MODAL -->
+<div class="modal-bd" id="devStatusModal" onclick="if(event.target===this)document.getElementById('devStatusModal').classList.remove('open')">
+  <div class="modal dmod">
+    <div class="mhdr"><div class="mtitle" style="color:#f87171;">🛸 Dev Mode</div><button class="mclose" onclick="document.getElementById('devStatusModal').classList.remove('open')">×</button></div>
+    <div class="dstp"><div class="dstpt">Active Overrides</div>
+      <div class="dstpr"><span class="dpk">Agent subscription</span><span class="dpv free">FREE</span></div>
+      <div class="dstpr"><span class="dpk">Protocol fees</span><span class="dpv free">FREE</span></div>
+      <div class="dstpr"><span class="dpk">Solana gas</span><span class="dpv always">Always paid</span></div>
+    </div>
+    <div class="dabox"><div class="dabt">Dev Deposit Address</div>
+      <div class="daba">F36PUYop1oCsBQMyP8aHncGppiGd1xyUm8k75PtHAoN3</div>
+      <div class="dabn">Send SOL here to fund dev testing. No fees deducted.</div>
+    </div>
+    <button class="bdeact" onclick="deactivateDev()">Deactivate Dev Mode</button>
+  </div>
+</div>
+
+<!-- PURCHASE MODAL -->
+<div class="modal-bd" id="pModal" onclick="if(event.target===this)closePModal()">
+  <div class="modal pmod" id="pModalContent"></div>
+</div>
+
+<!-- BROWSE PAGE -->
+<div class="page active" id="pageBrowse">
+  <div class="wrap">
+    <div class="phdr"><div class="ptitle">🤖 AI Trading Agents</div>
+    <div class="psub">Deploy autonomous Solana trading bots. Configure strategy, set risk parameters, let Saturn trade 24/7. Pay in $SATURN for 50% off.</div></div>
+    <div class="devbar" id="devBar"><span style="font-size:18px;">🛸</span><div class="devbar-txt"><strong>DEV MODE ACTIVE</strong> — All subscriptions FREE. Only Solana gas applies.</div></div>
+    <div class="filter-row">
+      <button class="fbtn active" onclick="filterA('all',this)">All Agents</button>
+      <button class="fbtn" onclick="filterA('memecoin',this)">Memecoin</button>
+      <button class="fbtn" onclick="filterA('dca',this)">DCA Bots</button>
+      <button class="fbtn" onclick="filterA('sniper',this)">Snipers</button>
+      <button class="fbtn" onclick="filterA('momentum',this)">Momentum</button>
+    </div>
+    <div class="agent-grid" id="agentGrid"></div>
+  </div>
+</div>
+
+<!-- MY AGENTS PAGE -->
+<div class="page" id="pageMine">
+  <div class="wrap">
+    <div class="phdr"><div class="ptitle">📊 My Agents</div><div class="psub">Monitor and manage your active Saturn trading agents.</div></div>
+    <div id="myAgentsContent"></div>
+  </div>
+</div>
+
+<script>
+const CFG={SATURN_MINT:"PASTE_SATURN_MINT_HERE",SATURN_DECIMALS:9,FEE_WALLET:"F36PUYop1oCsBQMyP8aHncGppiGd1xyUm8k75PtHAoN3",SOL_MONTH:0.125,DISC:0.5,RPC:"https://api.mainnet-beta.solana.com",solUSD:150,satUSD:0.005};
+const DEV_CODE="boss2026",DEV_KEY="saturn_dev_v12";
+let tapCount=0,tapTimer=null;
+
+// ── DEV MODE ──────────────────────────────────────────────────────
+function initDev(){
+  if(sessionStorage.getItem(DEV_KEY)==="true")applyDev(true);
+  const logo=document.getElementById("saturnLogo");
+  if(!logo)return;
+  logo.addEventListener("click",()=>{tapCount++;clearTimeout(tapTimer);tapTimer=setTimeout(()=>{tapCount=0;},3000);if(tapCount>=5){tapCount=0;document.getElementById("devModal").classList.add("open");setTimeout(()=>document.getElementById("devCodeInput").focus(),100);}});
+}
+function closeDevModal(){document.getElementById("devModal").classList.remove("open");document.getElementById("devCodeInput").value="";document.getElementById("devError").textContent="";}
+function submitDevCode(){
+  const v=document.getElementById("devCodeInput").value.trim().toLowerCase();
+  if(v===DEV_CODE){sessionStorage.setItem(DEV_KEY,"true");closeDevModal();applyDev(true);toast("🛸 Dev mode ON! Free agent access.");}
+  else{document.getElementById("devError").textContent="Invalid code.";document.getElementById("devCodeInput").value="";}
+}
+function openDevStatus(){document.getElementById("devStatusModal").classList.add("open");}
+function deactivateDev(){sessionStorage.removeItem(DEV_KEY);document.getElementById("devStatusModal").classList.remove("open");applyDev(false);toast("Dev mode off.");}
+function isDev(){return sessionStorage.getItem(DEV_KEY)==="true";}
+function applyDev(on){
+  const b=document.getElementById("devBadge");if(b)b.style.display=on?"flex":"none";
+  const db=document.getElementById("devBar");if(db)db.className="devbar"+(on?" show":"");
+  renderGrid(AGENTS);
+  if(document.getElementById("pageMine").classList.contains("active"))renderMine();
+}
+function toast(msg){const t=document.createElement("div");t.style.cssText="position:fixed;bottom:24px;right:24px;z-index:999;background:#1a2236;border:1px solid #c9a84c;color:#dde6f5;border-radius:12px;padding:13px 18px;font-size:13px;font-weight:600;font-family:'Space Grotesk',sans-serif;box-shadow:0 8px 28px rgba(0,0,0,0.5);max-width:300px;";t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),4000);}
+
+// ── AGENT DATA ────────────────────────────────────────────────────
+const AGENTS=[
+  {id:"mastermind",name:"The Mastermind",icon:"🧠",cat:["memecoin","sniper"],feat:true,isNew:false,desc:"Flagship memecoin agent. MACD entries, 300% TP with 12% moon bag, -50% SL, auto DCA at -14% and -40%.",wr:"67%",ret:"+312%",sol:0.125,tags:["MACD","DCA","Moon Bag","Auto TP"]},
+  {id:"sniper-x",name:"Sniper X",icon:"🎯",cat:["sniper","memecoin"],feat:false,isNew:true,desc:"Ultra-fast new token sniper. Filters by liquidity, bundlers, and insider activity on pump.fun launches.",wr:"54%",ret:"+480%",sol:0.125,tags:["Pump.fun","Bundler Filter","Speed","New Tokens"]},
+  {id:"dca-steady",name:"DCA Steady",icon:"📈",cat:["dca"],feat:false,isNew:false,desc:"Dollar-cost averaging for established Solana tokens. Buys on schedule, averages down on dips.",wr:"78%",ret:"+145%",sol:0.075,tags:["DCA","Low Risk","Schedule","Accumulation"]},
+  {id:"momentum-wave",name:"Momentum Wave",icon:"🌊",cat:["momentum"],feat:false,isNew:false,desc:"Rides momentum with volume surge detection and RSI. Enters on breakouts, exits on momentum loss.",wr:"61%",ret:"+225%",sol:0.125,tags:["RSI","Volume","Breakout","Momentum"]},
+  {id:"bundle-filter",name:"Bundle Filter Pro",icon:"🛡️",cat:["memecoin"],feat:false,isNew:false,desc:"Detects bundled/insider launches. Deep Bubblemaps analysis, top holder concentration checks.",wr:"71%",ret:"+198%",sol:0.125,tags:["Anti-Rug","Bubblemaps","Safe","Insider Check"]},
+  {id:"night-owl",name:"Night Owl",icon:"🦉",cat:["memecoin","momentum"],feat:false,isNew:true,desc:"Trades overnight UTC 00:00-08:00 when competition is lowest. Focuses on Asian session spikes.",wr:"58%",ret:"+267%",sol:0.100,tags:["Night Trading","Asian Session","Low Competition"]},
+];
+
+let myAgents=[],curFee="sol",selAgent=null;
+
+function satAmt(sol){return Math.ceil(sol*CFG.solUSD*CFG.DISC/CFG.satUSD);}
+
+// ── WALLETS ───────────────────────────────────────────────────────
+const WALLETS=[
+  {id:"phantom",name:"Phantom",color:"#ab9ff2",detect:()=>!!window.solana?.isPhantom,connect:async()=>{const r=await window.solana.connect();return r.publicKey.toString();},sign:()=>window.solana,url:"https://phantom.app/"},
+  {id:"solflare",name:"Solflare",color:"#fc7227",detect:()=>!!window.solflare?.isSolflare,connect:async()=>{await window.solflare.connect();return window.solflare.publicKey.toString();},sign:()=>window.solflare,url:"https://solflare.com/"},
+  {id:"backpack",name:"Backpack",color:"#e33e3f",detect:()=>!!(window.backpack?.isBackpack||window.xnft?.solana),connect:async()=>{const b=window.backpack||window.xnft?.solana;await b.connect();return b.publicKey.toString();},sign:()=>window.backpack||window.xnft?.solana,url:"https://backpack.app/"},
+  {id:"coinbase",name:"Coinbase Wallet",color:"#0052ff",detect:()=>!!window.coinbaseSolana,connect:async()=>{const r=await window.coinbaseSolana.connect();return r.publicKey.toString();},sign:()=>window.coinbaseSolana,url:"https://www.coinbase.com/wallet"},
+  {id:"brave",name:"Brave Wallet",color:"#ff6000",detect:()=>!!(window.braveSolana||window.solana?.isBraveWallet),connect:async()=>{const w=window.braveSolana||window.solana;const r=await w.connect();return r.publicKey.toString();},sign:()=>window.braveSolana||window.solana,url:"https://brave.com/wallet/"},
+  {id:"trust",name:"Trust Wallet",color:"#3375BB",detect:()=>!!window.trustwallet?.solana,connect:async()=>{const r=await window.trustwallet.solana.connect();return r.publicKey.toString();},sign:()=>window.trustwallet?.solana,url:"https://trustwallet.com/"},
+];
+let W={id:null,pubkey:null};
+
+function openWallet(){
+  if(W.pubkey){if(confirm("Disconnect?"))disconnect();return;}
+  const det=WALLETS.filter(w=>w.detect&&w.detect()),not=WALLETS.filter(w=>!w.detect||!w.detect());
+  let h="";
+  if(det.length){h+='<div class="wdiv">Detected</div>';h+=det.map(w=>wH(w,true)).join("");}
+  if(not.length){h+='<div class="wdiv">Install to use</div>';h+=not.map(w=>wH(w,false)).join("");}
+  document.getElementById("wList").innerHTML=h;
+  document.getElementById("wModal").classList.add("open");
+}
+function wH(w,det){return '<div class="wopt '+(det?"det":"")+'" onclick="selW(\''+w.id+'\')"><div class="wicon" style="background:'+w.color+'20;border:1px solid '+w.color+'30">💼</div><div class="winfo"><div class="wname">'+w.name+'</div><div class="wstatus '+(det?"det":"")+'">'+( det?"Detected · Ready":"Not installed")+'</div></div><div style="color:var(--m);font-size:14px;">'+(det?"›":"↗")+'</div></div>';}
+async function selW(id){
+  const w=WALLETS.find(x=>x.id===id);if(!w)return;
+  if(!w.detect||!w.detect()){window.open(w.url,"_blank");return;}
+  try{const pk=await w.connect();W={id,pubkey:pk};closeWallet();updateBtn();renderMine();}catch(e){alert("Failed: "+(e.message||"Unknown"));}
+}
+function closeWallet(){document.getElementById("wModal").classList.remove("open");}
+function disconnect(){W={id:null,pubkey:null};updateBtn();renderMine();}
+function updateBtn(){
+  const btn=document.getElementById("walletBtn");
+  if(W.pubkey){btn.className="wallet-btn conn";btn.innerHTML='<span class="wdot"></span>'+W.pubkey.slice(0,4)+"..."+W.pubkey.slice(-4);}
+  else{btn.className="wallet-btn";btn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M21 18v1a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v1"/><polyline points="15 3 21 9 15 15"/><line x1="21" y1="9" x2="7" y2="9"/></svg>Connect Wallet';}
+}
+
+// ── RENDER AGENTS ─────────────────────────────────────────────────
+function renderGrid(list){
+  const grid=document.getElementById("agentGrid");if(!grid)return;
+  const dev=isDev();
+  grid.innerHTML=list.map(a=>{
+    const s=satAmt(a.sol);
+    const price=dev?'<span class="pf">FREE (dev)</span>':'<span class="ps">'+a.sol+' SOL</span><span class="or">or</span><span class="pa">'+s.toLocaleString()+' $SAT</span>';
+    const bc="bsub"+(a.feat?" feat":"")+(dev?" dv":"");
+    const bt=dev?"🛸 Deploy Free":"Deploy Agent →";
+    return '<div class="ac'+(a.feat?" feat":"")+'">'+
+      (a.feat?'<div class="fbadge">⭐ FEATURED</div>':(a.isNew?'<div class="nbadge">NEW</div>':''))+
+      (dev?'<div class="devbadge-ac" style="display:block;">DEV FREE</div>':'')+
+      '<div class="aico">'+a.icon+'</div><div class="aname">'+a.name+'</div><div class="adesc">'+a.desc+'</div>'+
+      '<div class="astats"><div class="astat"><div class="astat-l">Win Rate</div><div class="astat-v gr">'+a.wr+'</div></div>'+
+      '<div class="astat"><div class="astat-l">Avg Return</div><div class="astat-v go">'+a.ret+'</div></div></div>'+
+      '<div class="atags">'+a.tags.map(t=>'<span class="atag">'+t+'</span>').join('')+'</div>'+
+      '<div class="aprow"><div class="aprice">'+price+'</div><div class="aper">/month</div></div>'+
+      '<button class="'+bc+'" onclick="openPurchase(\''+a.id+'\')">'+bt+'</button></div>';
+  }).join("");
+}
+
+function filterA(cat,btn){
+  document.querySelectorAll(".fbtn").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  renderGrid(cat==="all"?AGENTS:AGENTS.filter(a=>a.cat.includes(cat)));
+}
+
+// ── PURCHASE MODAL ────────────────────────────────────────────────
+function openPurchase(id){
+  if(!W.pubkey){alert("Connect your wallet first!");openWallet();return;}
+  selAgent=AGENTS.find(a=>a.id===id);curFee="sol";renderPM();
+  document.getElementById("pModal").classList.add("open");
+}
+function closePModal(){document.getElementById("pModal").classList.remove("open");}
+
+function renderPM(){
+  const a=selAgent;if(!a)return;
+  const dev=isDev();const s=satAmt(a.sol);
+  const solUsd=(a.sol*CFG.solUSD).toFixed(2),satUsd=(s*CFG.satUSD).toFixed(2);
+  let feeHtml='';
+  if(dev){feeHtml='<div class="alert a-red">🛸 <strong>Dev Mode</strong> — FREE. Only Solana gas applies.</div>';}
+  else{feeHtml='<div class="pmtog"><div class="popt '+(curFee==="sol"?"psol":"")+'" onclick="setFee(\'sol\')"><div class="popt-hd"><span class="pico">◎</span><div class="frdot"></div></div><div class="ptit">Pay SOL</div><div class="pamt s">'+a.sol+' SOL/mo</div><div class="psub-t">≈ $'+solUsd+'/mo</div></div><div class="popt '+(curFee==="sat"?"psat":"")+'" onclick="setFee(\'sat\')" style="position:relative;"><div class="save-p">SAVE 50%</div><div class="popt-hd"><span class="pico">🪐</span><div class="frdot"></div></div><div class="ptit">Pay $SATURN</div><div class="pamt a">'+s.toLocaleString()+' SATURN/mo</div><div class="psub-t">≈ $'+satUsd+'/mo</div></div></div>';}
+  const bc="bcpay "+(dev?"dev":curFee);
+  const bt=dev?"🛸 Deploy Free (Dev)":"🤖 Deploy "+a.name;
+  document.getElementById("pModalContent").innerHTML=
+    '<div class="mhdr"><div><div class="pm-name">'+a.icon+' '+a.name+'</div><div class="pm-sub">Configure and deploy</div></div><button class="mclose" onclick="closePModal()">×</button></div>'+
+    feeHtml+
+    '<div class="cfg-sec"><div class="cfg-t">Agent Configuration</div><div class="cfg-g">'+
+    '<div class="fg"><label class="fl">Buy Size (SOL)</label><input class="fi" type="number" placeholder="0.05" step="0.01"/></div>'+
+    '<div class="fg"><label class="fl">Take Profit %</label><input class="fi" type="number" placeholder="300" value="300"/></div>'+
+    '<div class="fg"><label class="fl">Stop Loss %</label><input class="fi" type="number" placeholder="50" value="50"/></div>'+
+    '<div class="fg"><label class="fl">Max Positions</label><select class="fi"><option>1</option><option>2</option><option selected>3</option></select></div>'+
+    '</div></div>'+
+    '<div class="nm-row"><button class="bback" onclick="closePModal()">Cancel</button>'+
+    '<button class="'+bc+'" onclick="confirmPurchase()">'+bt+'</button></div>';
+}
+function setFee(m){curFee=m;renderPM();}
+
+// ── CONFIRM ───────────────────────────────────────────────────────
+async function confirmPurchase(){
+  if(!W.pubkey||!selAgent)return;
+  const a=selAgent,dev=isDev();
+  document.getElementById("pModalContent").innerHTML='<div class="tx-load"><div class="spin-big"></div><div class="l-title">Deploying '+a.icon+' '+a.name+'...</div><div class="l-sub">'+(dev?"Dev mode — free deployment processing...":"Approve subscription in your wallet")+'</div></div>';
+  try{
+    let sig="";
+    if(!dev){
+      const conn=new solanaWeb3.Connection(CFG.RPC,"confirmed");
+      const from=new solanaWeb3.PublicKey(W.pubkey);
+      const to=new solanaWeb3.PublicKey(CFG.FEE_WALLET);
+      const w=WALLETS.find(x=>x.id===W.id);
+      if(curFee==="sol"){
+        const {blockhash}=await conn.getLatestBlockhash();
+        const tx=new solanaWeb3.Transaction({recentBlockhash:blockhash,feePayer:from});
+        tx.add(solanaWeb3.SystemProgram.transfer({fromPubkey:from,toPubkey:to,lamports:Math.round(a.sol*solanaWeb3.LAMPORTS_PER_SOL)}));
+        const signed=await w.sign().signTransaction(tx);
+        sig=await conn.sendRawTransaction(signed.serialize());
+        await conn.confirmTransaction(sig,"confirmed");
+      } else {
+        const TPK=new solanaWeb3.PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
+        const ATPK=new solanaWeb3.PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJe1bRS");
+        const mint=new solanaWeb3.PublicKey(CFG.SATURN_MINT);
+        const s=satAmt(a.sol);const bigAmt=BigInt(s*(10**CFG.SATURN_DECIMALS));
+        const ata=o=>solanaWeb3.PublicKey.findProgramAddressSync([o.toBuffer(),TPK.toBuffer(),mint.toBuffer()],ATPK)[0];
+        const fromATA=ata(from),toATA=ata(to);
+        const {blockhash}=await conn.getLatestBlockhash();
+        const tx=new solanaWeb3.Transaction({recentBlockhash:blockhash,feePayer:from});
+        if(!await conn.getAccountInfo(toATA)){tx.add(new solanaWeb3.TransactionInstruction({programId:ATPK,keys:[{pubkey:from,isSigner:true,isWritable:true},{pubkey:toATA,isSigner:false,isWritable:true},{pubkey:to,isSigner:false,isWritable:false},{pubkey:mint,isSigner:false,isWritable:false},{pubkey:solanaWeb3.SystemProgram.programId,isSigner:false,isWritable:false},{pubkey:TPK,isSigner:false,isWritable:false}],data:Buffer.from([])}));}
+        const td=Buffer.alloc(9);td[0]=3;td.writeBigUInt64LE(bigAmt,1);
+        tx.add(new solanaWeb3.TransactionInstruction({programId:TPK,keys:[{pubkey:fromATA,isSigner:false,isWritable:true},{pubkey:toATA,isSigner:false,isWritable:true},{pubkey:from,isSigner:true,isWritable:false}],data:td}));
+        const signed=await w.sign().signTransaction(tx);
+        sig=await conn.sendRawTransaction(signed.serialize());
+        await conn.confirmTransaction(sig,"confirmed");
+      }
+    } else { await new Promise(r=>setTimeout(r,1500)); }
+    myAgents.push({...a,deployedAt:Date.now(),feeMethod:dev?"dev":curFee,sig,status:"active",pnl:"+0.00%",trades:0});
+    document.getElementById("pModalContent").innerHTML=
+      '<div class="tx-load"><div style="font-size:48px;margin-bottom:14px;">🎉</div>'+
+      '<div class="l-title" style="color:var(--green)">Agent Deployed!</div>'+
+      '<div class="l-sub" style="margin-bottom:16px;">'+a.name+' is now live and monitoring the market.</div>'+
+      (sig?'<div class="alert a-green">✅ Tx confirmed on-chain</div>':'')+
+      (dev?'<div class="alert a-red">🛸 Deployed FREE in dev mode</div>':'')+
+      '<button class="bcpay sat" onclick="closePModal();switchPage(\'mine\')" style="margin-top:4px;">View My Agents →</button></div>';
+  }catch(e){
+    document.getElementById("pModalContent").innerHTML=
+      '<div class="tx-load"><div style="font-size:40px;margin-bottom:14px;">❌</div>'+
+      '<div class="l-title" style="color:var(--red)">Failed</div>'+
+      '<div class="l-sub" style="margin-bottom:16px;">'+(e.message||"Unknown error")+'</div>'+
+      '<button class="bback" onclick="closePModal()">Close</button></div>';
+  }
+}
+
+// ── MY AGENTS ─────────────────────────────────────────────────────
+function renderMine(){
+  const el=document.getElementById("myAgentsContent");if(!el)return;
+  if(!W.pubkey){el.innerHTML='<div class="empty"><div class="eico">🔌</div><div class="etitle">Connect Wallet</div><div class="esub">Connect to view your deployed agents.</div><button class="bpri" onclick="openWallet()">Connect Wallet</button></div>';return;}
+  if(myAgents.length===0){el.innerHTML='<div class="empty"><div class="eico">🤖</div><div class="etitle">No Agents Yet</div><div class="esub">Deploy your first Saturn AI trading agent to start trading automatically.</div><button class="bpri" onclick="switchPage(\'browse\')">Browse Agents</button></div>';return;}
+  el.innerHTML='<div class="ma-grid">'+myAgents.map((a,i)=>
+    '<div class="mac"><div class="mac-hd"><div class="mac-l"><span class="mac-ico">'+a.icon+'</span><div><div class="mac-name">'+a.name+'</div><div class="mac-per">'+(a.feeMethod==="dev"?"Dev (Free)":a.feeMethod==="sol"?"Paid SOL":"Paid $SATURN")+'</div></div></div><div class="sdot '+a.status+'"></div></div>'+
+    '<div class="mac-stats"><div class="mst"><div class="mst-l">Status</div><div class="mst-v" style="color:var(--green)">'+a.status.toUpperCase()+'</div></div>'+
+    '<div class="mst"><div class="mst-l">PnL</div><div class="mst-v g">'+a.pnl+'</div></div>'+
+    '<div class="mst"><div class="mst-l">Trades</div><div class="mst-v">'+a.trades+'</div></div></div>'+
+    '<div class="mac-btns"><button class="mbtn pause" onclick="toggleA('+i+')">⏸ Pause</button>'+
+    '<button class="mbtn stop" onclick="stopA('+i+')">⏹ Stop</button></div></div>'
+  ).join('')+'</div>';
+}
+function toggleA(i){myAgents[i].status=myAgents[i].status==="active"?"paused":"active";renderMine();}
+function stopA(i){if(confirm("Stop agent?  This cancels the subscription.")){myAgents.splice(i,1);renderMine();}}
+
+// ── PAGE SWITCH ───────────────────────────────────────────────────
+function switchPage(p){
+  document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));
+  document.querySelectorAll(".nav-tab").forEach(x=>x.classList.remove("active"));
+  document.getElementById(p==="browse"?"pageBrowse":"pageMine").classList.add("active");
+  document.getElementById(p==="browse"?"tabBrowse":"tabMine").classList.add("active");
+  if(p==="mine")renderMine();
+}
+
+// ── INIT ──────────────────────────────────────────────────────────
+renderGrid(AGENTS);
+window.addEventListener("load",async()=>{
+  initDev();
+  if(window.solana?.isPhantom){try{const r=await window.solana.connect({onlyIfTrusted:true});W={id:"phantom",pubkey:r.publicKey.toString()};updateBtn();}catch(e){}}
+  if(!W.pubkey&&window.solflare?.isSolflare){try{await window.solflare.connect();if(window.solflare.publicKey){W={id:"solflare",pubkey:window.solflare.publicKey.toString()};updateBtn();}}catch(e){}}
+});
+</script>
+</body>
+</html>

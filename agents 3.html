@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Saturn Agents | AI Trading Bots</title>
+<script src="https://unpkg.com/@solana/web3.js@1.95.3/lib/index.iife.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#03050c;--s1:#07090f;--s2:#0b0d16;--s3:#0f1120;
+  --b1:#12192a;--b2:#1a2338;
+  --gold:#f0b429;--gold-dim:rgba(240,180,41,0.08);
+  --purple:#9945FF;--purple-dim:rgba(153,69,255,0.1);
+  --green:#00d98b;--green-dim:rgba(0,217,139,0.08);
+  --blue:#3b82f6;--blue-dim:rgba(59,130,246,0.08);
+  --text:#dde6f8;--muted:#2e3f5c;--muted2:#5a7090;
+  --red:#ef4444;--amber:#f59e0b;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;z-index:0;
+  background:radial-gradient(ellipse 80% 50% at 50% -20%,rgba(153,69,255,0.07) 0%,transparent 60%),
+  radial-gradient(ellipse 60% 50% at 100% 100%,rgba(240,180,41,0.05) 0%,transparent 60%);pointer-events:none;}
+body::after{content:'';position:fixed;inset:0;z-index:0;
+  background-image:linear-gradient(rgba(153,69,255,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(153,69,255,0.02) 1px,transparent 1px);
+  background-size:52px 52px;pointer-events:none;}
+
+nav{position:sticky;top:0;z-index:200;background:rgba(3,5,12,0.93);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--b1);padding:0 28px;height:60px;
+  display:flex;align-items:center;justify-content:space-between;}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;}
+.nav-logo-ring{width:36px;height:36px;border-radius:50%;border:2px solid var(--gold);
+  display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 0 20px rgba(240,180,41,0.3);}
+.nav-logo-text{font-size:16px;font-weight:800;letter-spacing:-0.01em;}
+.nav-logo-text span{color:var(--gold);}
+.nav-links{display:flex;gap:4px;}
+.nav-link{padding:6px 14px;border-radius:8px;font-size:13px;font-weight:600;color:var(--muted2);
+  text-decoration:none;transition:all 0.15s;cursor:pointer;border:none;background:transparent;font-family:'Syne',sans-serif;}
+.nav-link:hover{color:var(--text);}
+.nav-link.active{background:var(--s2);color:var(--purple);}
+.nav-right{display:flex;align-items:center;gap:8px;}
+.price-chip{display:flex;align-items:center;gap:7px;background:var(--s2);
+  border:1px solid var(--b2);border-radius:8px;padding:5px 11px;font-size:12px;}
+.pdot{width:6px;height:6px;border-radius:50%;background:var(--gold);
+  box-shadow:0 0 8px rgba(240,180,41,0.7);animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.3;}}
+.pval{font-weight:700;color:var(--gold);font-family:'Space Mono',monospace;}
+.psym{color:var(--muted2);font-weight:600;}
+.wallet-btn{display:flex;align-items:center;gap:7px;padding:8px 16px;border-radius:10px;
+  font-size:13px;font-weight:700;cursor:pointer;border:none;font-family:'Syne',sans-serif;
+  transition:all 0.2s;background:linear-gradient(135deg,#9945FF,#7c3aed);color:white;
+  box-shadow:0 0 16px rgba(153,69,255,0.25);}
+.wallet-btn:hover{transform:translateY(-1px);box-shadow:0 6px 22px rgba(153,69,255,0.38);}
+.wallet-btn.conn{background:rgba(240,180,41,0.1);border:1px solid rgba(240,180,41,0.28);color:var(--gold);box-shadow:none;}
+
+/* WALLET MODAL */
+.modal-bg{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.8);
+  backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:20px;
+  opacity:0;pointer-events:none;transition:opacity 0.2s;}
+.modal-bg.open{opacity:1;pointer-events:all;}
+.modal{background:var(--s1);border:1px solid var(--b2);border-radius:20px;
+  padding:28px;width:100%;max-width:400px;transform:translateY(14px) scale(0.97);transition:transform 0.2s;}
+.modal-bg.open .modal{transform:none;}
+.modal-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
+.modal-title{font-size:20px;font-weight:800;}
+.modal-x{width:30px;height:30px;border-radius:8px;border:1px solid var(--b2);background:transparent;
+  color:var(--muted2);cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center;}
+.modal-x:hover{background:var(--s2);color:var(--text);}
+.wallet-list{display:flex;flex-direction:column;gap:8px;}
+.w-opt{display:flex;align-items:center;gap:13px;padding:13px 15px;border-radius:12px;
+  cursor:pointer;border:1.5px solid var(--b1);background:var(--s2);transition:all 0.15s;}
+.w-opt:hover{border-color:var(--b2);transform:translateX(3px);}
+.w-opt.det{border-color:rgba(240,180,41,0.22);}
+.w-opt.det:hover{border-color:var(--gold);}
+.w-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.w-name{font-size:14px;font-weight:700;margin-bottom:2px;}
+.w-status{font-size:11px;color:var(--muted2);}
+.w-status.det{color:var(--gold);}
+.w-divider{text-align:center;font-size:10px;color:var(--muted);padding:8px 0;
+  text-transform:uppercase;letter-spacing:0.1em;font-weight:700;}
+
+/* PURCHASE MODAL */
+.pm-bg{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,0.8);
+  backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:20px;
+  opacity:0;pointer-events:none;transition:opacity 0.2s;}
+.pm-bg.open{opacity:1;pointer-events:all;}
+.pm{background:var(--s1);border:1px solid var(--b2);border-radius:20px;
+  padding:32px;width:100%;max-width:460px;transform:translateY(14px) scale(0.97);transition:transform 0.2s;}
+.pm-bg.open .pm{transform:none;}
+.pm-hd{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;}
+.pm-title{font-size:20px;font-weight:800;margin-bottom:4px;}
+.pm-sub{font-size:13px;color:var(--muted2);}
+.pm-x{width:30px;height:30px;border-radius:8px;border:1px solid var(--b2);background:transparent;
+  color:var(--muted2);cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center;}
+
+/* MAIN */
+main{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:44px 24px 80px;}
+
+/* HERO */
+.hero{text-align:center;margin-bottom:56px;}
+.hero-tag{display:inline-flex;align-items:center;gap:8px;
+  background:var(--purple-dim);border:1px solid rgba(153,69,255,0.25);
+  border-radius:20px;padding:5px 14px;font-size:12px;font-weight:700;color:#c084fc;
+  margin-bottom:20px;font-family:'Space Mono',monospace;}
+.hero-title{font-size:42px;font-weight:800;letter-spacing:-0.04em;line-height:1.1;margin-bottom:14px;}
+.hero-title span{color:var(--gold);}
+.hero-sub{font-size:16px;color:var(--muted2);line-height:1.7;max-width:560px;margin:0 auto 28px;}
+.hero-stats{display:flex;align-items:center;justify-content:center;gap:32px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-val{font-size:24px;font-weight:800;color:var(--gold);font-family:'Space Mono',monospace;}
+.hstat-lbl{font-size:11px;color:var(--muted2);text-transform:uppercase;letter-spacing:0.07em;margin-top:2px;}
+
+/* FEE BANNER */
+.fee-banner{
+  background:linear-gradient(135deg,rgba(240,180,41,0.06),rgba(153,69,255,0.05));
+  border:1px solid rgba(240,180,41,0.18);border-radius:14px;
+  padding:16px 22px;margin-bottom:44px;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+.fb-l{display:flex;align-items:center;gap:14px;}
+.fb-title{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:3px;}
+.fb-sub{font-size:12px;color:var(--muted2);}
+.fb-pills{display:flex;gap:8px;flex-wrap:wrap;}
+.fb-pill{background:rgba(240,180,41,0.12);border:1px solid rgba(240,180,41,0.25);
+  color:var(--gold);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;
+  white-space:nowrap;font-family:'Space Mono',monospace;}
+.fb-pill.purple{background:var(--purple-dim);border-color:rgba(153,69,255,0.25);color:#c084fc;}
+
+/* SECTION */
+.section-hd{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:24px;}
+.section-title{font-size:20px;font-weight:800;letter-spacing:-0.02em;}
+.section-sub{font-size:13px;color:var(--muted2);}
+
+/* AGENT GRID */
+.agent-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px;margin-bottom:60px;}
+.agent-card{
+  background:var(--s1);border:1px solid var(--b1);border-radius:18px;
+  padding:24px;transition:all 0.2s;position:relative;overflow:hidden;cursor:pointer;
+}
+.agent-card:hover{border-color:var(--b2);transform:translateY(-2px);box-shadow:0 16px 48px rgba(0,0,0,0.4);}
+.agent-card.featured{border-color:rgba(240,180,41,0.3);}
+.agent-card.featured::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse at top right,rgba(240,180,41,0.06) 0%,transparent 65%);}
+.agent-card.featured:hover{border-color:var(--gold);}
+.featured-badge{position:absolute;top:16px;right:16px;
+  background:linear-gradient(135deg,#f0b429,#d97706);color:#03050c;
+  font-size:9px;font-weight:800;padding:3px 9px;border-radius:20px;font-family:'Space Mono',monospace;}
+.ac-header{display:flex;align-items:flex-start;gap:14px;margin-bottom:16px;}
+.ac-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;
+  font-size:24px;flex-shrink:0;}
+.ac-icon.gold{background:var(--gold-dim);border:1px solid rgba(240,180,41,0.2);}
+.ac-icon.purple{background:var(--purple-dim);border:1px solid rgba(153,69,255,0.2);}
+.ac-icon.blue{background:var(--blue-dim);border:1px solid rgba(59,130,246,0.2);}
+.ac-icon.green{background:var(--green-dim);border:1px solid rgba(0,217,139,0.2);}
+.ac-info{flex:1;}
+.ac-name{font-size:17px;font-weight:800;margin-bottom:3px;}
+.ac-strategy{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted2);}
+.ac-desc{font-size:12px;color:var(--muted2);line-height:1.65;margin-bottom:16px;}
+.ac-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:18px;}
+.acs{background:var(--s2);border-radius:9px;padding:9px 10px;text-align:center;}
+.acs-val{font-size:14px;font-weight:800;font-family:'Space Mono',monospace;}
+.acs-val.green{color:var(--green);}
+.acs-val.gold{color:var(--gold);}
+.acs-val.blue{color:var(--blue);}
+.acs-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-top:2px;}
+.ac-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px;}
+.actag{font-size:10px;font-weight:700;padding:3px 8px;border-radius:5px;
+  background:var(--s2);border:1px solid var(--b2);color:var(--muted2);}
+.actag.live{background:var(--green-dim);border-color:rgba(0,217,139,0.22);color:var(--green);}
+.ac-footer{display:flex;align-items:center;justify-content:space-between;
+  padding-top:16px;border-top:1px solid var(--b1);}
+.ac-price{display:flex;flex-direction:column;}
+.acp-sol{font-size:16px;font-weight:800;color:var(--text);}
+.acp-sat{font-size:12px;color:var(--gold);font-weight:700;}
+.acp-disc{font-size:10px;color:var(--green);background:var(--green-dim);
+  border:1px solid rgba(0,217,139,0.2);border-radius:4px;padding:2px 6px;
+  font-family:'Space Mono',monospace;font-weight:700;display:inline-block;margin-top:3px;}
+.ac-btn{background:linear-gradient(135deg,#d97706,#b45309);color:white;border:none;
+  padding:9px 18px;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;
+  font-family:'Syne',sans-serif;transition:all 0.18s;}
+.ac-btn:hover{background:linear-gradient(135deg,#f0b429,#d97706);transform:translateY(-1px);}
+.ac-btn.purple{background:linear-gradient(135deg,#9945FF,#7c3aed);}
+.ac-btn.purple:hover{background:linear-gradient(135deg,#a855f7,#9945FF);}
+
+/* ACTIVE BOTS */
+.active-section{margin-bottom:60px;}
+.empty-state{text-align:center;padding:48px;background:var(--s1);border:1px dashed var(--b2);
+  border-radius:16px;color:var(--muted2);}
+.es-icon{font-size:40px;margin-bottom:12px;}
+.es-title{font-size:16px;font-weight:700;margin-bottom:6px;color:var(--text);}
+.es-sub{font-size:13px;line-height:1.6;}
+
+/* MY BOTS */
+.my-bot-card{
+  background:var(--s1);border:1px solid var(--b1);border-radius:14px;
+  padding:20px;margin-bottom:12px;display:flex;align-items:center;gap:16px;
+}
+.mbc-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;
+  justify-content:center;font-size:20px;flex-shrink:0;background:var(--purple-dim);border:1px solid rgba(153,69,255,0.2);}
+.mbc-info{flex:1;}
+.mbc-name{font-size:15px;font-weight:700;margin-bottom:3px;}
+.mbc-meta{font-size:12px;color:var(--muted2);}
+.mbc-stats{display:flex;gap:20px;}
+.mbc-stat{text-align:center;}
+.mbc-val{font-size:15px;font-weight:800;font-family:'Space Mono',monospace;}
+.mbc-val.green{color:var(--green);}
+.mbc-val.red{color:var(--red);}
+.mbc-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;}
+.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px;}
+.dot-live{background:var(--green);box-shadow:0 0 7px rgba(0,217,139,0.6);animation:blink 2s infinite;}
+.dot-paused{background:var(--amber);}
+
+/* PURCHASE MODAL INNER */
+.pm-agent-preview{display:flex;align-items:center;gap:14px;
+  background:var(--s2);border:1px solid var(--b1);border-radius:12px;
+  padding:16px;margin-bottom:20px;}
+.pm-agent-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;
+  justify-content:center;font-size:22px;background:var(--purple-dim);}
+.pm-agent-name{font-size:16px;font-weight:800;margin-bottom:3px;}
+.pm-agent-strategy{font-size:12px;color:var(--muted2);}
+.fee-toggle-pm{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
+.fo-pm{border-radius:12px;padding:14px;cursor:pointer;border:2px solid var(--b1);
+  background:var(--s2);transition:all 0.18s;position:relative;}
+.fo-pm:hover{border-color:var(--b2);}
+.fo-pm.fsol{border-color:var(--purple);background:var(--purple-dim);}
+.fo-pm.fsat{border-color:var(--gold);background:var(--gold-dim);}
+.fo-pm-title{font-size:13px;font-weight:700;margin-bottom:3px;}
+.fo-pm-amt{font-size:15px;font-weight:700;font-family:'Space Mono',monospace;margin-bottom:2px;}
+.fo-pm-amt.sol{color:var(--purple);}
+.fo-pm-amt.sat{color:var(--gold);}
+.fo-pm-sub{font-size:11px;color:var(--muted2);}
+.pm-save-pill{position:absolute;top:-9px;right:10px;
+  background:linear-gradient(135deg,#f0b429,#d97706);color:#03050c;
+  font-size:9px;font-weight:800;padding:2px 8px;border-radius:20px;font-family:'Space Mono',monospace;}
+.pm-btn-row{display:flex;gap:10px;}
+.pm-btn-cancel{flex:1;background:transparent;color:var(--muted2);border:1.5px solid var(--b2);
+  padding:12px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif;}
+.pm-btn-confirm{flex:2;background:linear-gradient(135deg,#f0b429,#d97706);color:#03050c;border:none;
+  padding:12px;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;font-family:'Syne',sans-serif;}
+.pm-btn-confirm:disabled{opacity:0.4;cursor:not-allowed;}
+.pm-alert{border-radius:9px;padding:11px 14px;margin-bottom:14px;font-size:12px;line-height:1.6;}
+.pm-alert-gold{background:rgba(240,180,41,0.06);border:1px solid rgba(240,180,41,0.2);color:#ca8a04;}
+.pm-alert-red{background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.18);color:#f87171;}
+.pm-alert-blue{background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.18);color:#60a5fa;}
+.pm-spinner{display:inline-block;width:15px;height:15px;border:2px solid rgba(3,5,12,0.3);
+  border-top-color:#03050c;border-radius:50%;animation:spin 0.7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.frdot-pm{width:16px;height:16px;border-radius:50%;border:2px solid var(--b2);
+  display:flex;align-items:center;justify-content:center;float:right;}
+.fo-pm.fsol .frdot-pm{background:var(--purple);border-color:var(--purple);}
+.fo-pm.fsol .frdot-pm::after{content:'';width:6px;height:6px;border-radius:50%;background:#03050c;}
+.fo-pm.fsat .frdot-pm{background:var(--gold);border-color:var(--gold);}
+.fo-pm.fsat .frdot-pm::after{content:'';width:6px;height:6px;border-radius:50%;background:#03050c;}
+
+@media(max-width:600px){
+  nav{padding:0 14px;}
+  .nav-links,.price-chip{display:none;}
+  main{padding:28px 14px 60px;}
+  .hero-title{font-size:28px;}
+  .agent-grid{grid-template-columns:1fr;}
+  .mbc-stats{display:none;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="index.html">
+    <div class="nav-logo-ring">🪐</div>
+    <span class="nav-logo-text">Saturn <span>Agents</span></span>
+  </a>
+  <div class="nav-links">
+    <a class="nav-link" href="lock.html">🔒 Lock</a>
+    <a class="nav-link active" href="agents.html">🤖 Agents</a>
+    <a class="nav-link" href="index.html">🪐 Terminal</a>
+  </div>
+  <div class="nav-right">
+    <div class="price-chip">
+      <span class="pdot"></span>
+      <span class="psym">$SATURN</span>
+      <span class="pval" id="satPrice">—</span>
+    </div>
+    <button class="wallet-btn" id="walletBtn" onclick="openModal()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+      Connect Wallet
+    </button>
+  </div>
+</nav>
+
+<!-- WALLET MODAL -->
+<div class="modal-bg" id="wModal" onclick="bgClose(event)">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-title">Connect Wallet</div>
+      <button class="modal-x" onclick="closeModal()">×</button>
+    </div>
+    <div class="wallet-list" id="wList"></div>
+  </div>
+</div>
+
+<!-- PURCHASE MODAL -->
+<div class="pm-bg" id="pmModal" onclick="pmBgClose(event)">
+  <div class="pm">
+    <div class="pm-hd">
+      <div>
+        <div class="pm-title" id="pmTitle">Deploy Agent</div>
+        <div class="pm-sub" id="pmSub">Configure your AI trading bot</div>
+      </div>
+      <button class="pm-x" onclick="closePM()">×</button>
+    </div>
+    <div id="pmContent"></div>
+  </div>
+</div>
+
+<main>
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-tag">
+      <span style="width:8px;height:8px;border-radius:50%;background:var(--purple);box-shadow:0 0 8px rgba(153,69,255,0.7);"></span>
+      Powered by $SATURN Protocol
+    </div>
+    <div class="hero-title">AI Trading Agents<br/>Built for <span>Solana Meme</span> Markets</div>
+    <div class="hero-sub">Deploy autonomous trading bots with battle-tested strategies. Pay in SOL or save 50% with $SATURN tokens.</div>
+    <div class="hero-stats">
+      <div class="hstat"><div class="hstat-val">0.125</div><div class="hstat-lbl">SOL / month per agent</div></div>
+      <div class="hstat"><div class="hstat-val">50%</div><div class="hstat-lbl">Discount with $SATURN</div></div>
+      <div class="hstat"><div class="hstat-val">10%</div><div class="hstat-lbl">Performance fee</div></div>
+      <div class="hstat"><div class="hstat-val">3</div><div class="hstat-lbl">Max simultaneous positions</div></div>
+    </div>
+  </div>
+
+  <!-- FEE BANNER -->
+  <div class="fee-banner">
+    <div class="fb-l">
+      <span style="font-size:24px;">💎</span>
+      <div>
+        <div class="fb-title">Hold $SATURN → Pay Less for Agents</div>
+        <div class="fb-sub">0.125 SOL/month per bot · OR · ~0.0625 SOL equivalent in $SATURN</div>
+      </div>
+    </div>
+    <div class="fb-pills">
+      <div class="fb-pill">0.125 SOL/month</div>
+      <div class="fb-pill purple">OR ~50% in $SATURN</div>
+    </div>
+  </div>
+
+  <!-- MARKETPLACE -->
+  <div class="section-hd">
+    <div>
+      <div class="section-title">🤖 Agent Marketplace</div>
+      <div class="section-sub">Select and deploy a pre-built AI trading strategy</div>
+    </div>
+  </div>
+
+  <div class="agent-grid" id="agentGrid"></div>
+
+  <!-- MY ACTIVE BOTS -->
+  <div class="active-section">
+    <div class="section-hd">
+      <div>
+        <div class="section-title">⚡ My Active Agents</div>
+        <div class="section-sub">Bots you've deployed this session</div>
+      </div>
+    </div>
+    <div id="myBots"></div>
+  </div>
+</main>
+
+<script>
+// ── CONFIG ───────────────────────────────────────────────
+const FEE_WALLET  = "F36PUYop1oCsBQMyP8aHncGppiGd1xyUm8k75PtHAoN3";
+const SOL_PER_MONTH = 0.125;
+const SAT_DISC    = 0.5;
+const PERF_FEE    = 0.10;
+const RPC         = "https://api.mainnet-beta.solana.com";
+const SATURN_MINT = "PASTE_SATURN_MINT_HERE";
+const SATURN_DEC  = 9;
+
+let solUSD=150, satUSD=0.005;
+let connWallet=null;
+let myBots=[];
+let selectedAgent=null;
+let pmFeeMethod="sol";
+let pmLoading=false;
+let pmError="";
+
+// ── AGENTS DATA ──────────────────────────────────────────
+const AGENTS=[
+  {
+    id:"mastermind",name:"The Mastermind",strategy:"MACD + Volume Filter",
+    icon:"🧠",iconClass:"gold",featured:true,
+    desc:"Our flagship bot — Claude The Mastermind Trading God. MACD-driven entries with strict volume, liquidity and bundler filters. Max 3 positions, 300% TP with 12% moon bag.",
+    stats:[{val:"+312%",lbl:"Avg PnL",cls:"green"},{val:"68%",lbl:"Win Rate",cls:"gold"},{val:"3",lbl:"Max Pos",cls:"blue"}],
+    tags:["MACD","Volume Filter","Moon Bag","DCA","live"],
+    config:{buySize:"0.05–0.08 SOL",tp:"300%",sl:"-50%",trailing:"25%",dca:"-14%/-40%"},
+  },
+  {
+    id:"scalper",name:"Mercury Scalper",strategy:"Momentum + RSI",
+    icon:"⚡",iconClass:"purple",
+    desc:"High-frequency scalper targeting 30–80% gains on momentum breakouts. Tight stops, fast exits. Best for volatile meme launches.",
+    stats:[{val:"+180%",lbl:"Avg PnL",cls:"green"},{val:"74%",lbl:"Win Rate",cls:"gold"},{val:"2",lbl:"Max Pos",cls:"blue"}],
+    tags:["RSI","Momentum","Scalp","Fast Exit"],
+    config:{buySize:"0.03–0.05 SOL",tp:"80%",sl:"-25%",trailing:"15%",dca:"N/A"},
+  },
+  {
+    id:"sniper",name:"Launch Sniper",strategy:"New Pair Detection",
+    icon:"🎯",iconClass:"blue",
+    desc:"Snipes new token launches within milliseconds. Filters bundlers, insiders, and Bubblemaps clusters. Sells into initial pump for quick 2–5x flips.",
+    stats:[{val:"+240%",lbl:"Avg PnL",cls:"green"},{val:"61%",lbl:"Win Rate",cls:"gold"},{val:"1",lbl:"Max Pos",cls:"blue"}],
+    tags:["Sniper","Launch","Anti-Bundler","Anti-Insider"],
+    config:{buySize:"0.02–0.04 SOL",tp:"400%",sl:"-60%",trailing:"30%",dca:"N/A"},
+  },
+  {
+    id:"dca-bot",name:"Saturn DCA",strategy:"Dollar Cost Averaging",
+    icon:"📊",iconClass:"green",
+    desc:"Systematic DCA strategy for quality meme tokens. Averages down at -14% and -40% then rides the recovery. Designed for tokens with strong community backing.",
+    stats:[{val:"+145%",lbl:"Avg PnL",cls:"green"},{val:"72%",lbl:"Win Rate",cls:"gold"},{val:"3",lbl:"Max Pos",cls:"blue"}],
+    tags:["DCA","Recovery","Long Hold","Community"],
+    config:{buySize:"0.05 SOL",tp:"200%",sl:"-65%",trailing:"20%",dca:"-14%/-40%"},
+  },
+  {
+    id:"bundle",name:"Saturn Bundle x3",strategy:"All Three Strategies",
+    icon:"🪐",iconClass:"gold",featured:false,
+    desc:"Deploy Mastermind + Mercury + Launch Sniper simultaneously at a discounted bundle rate. Diversified exposure across multiple strategies.",
+    stats:[{val:"+280%",lbl:"Avg PnL",cls:"green"},{val:"71%",lbl:"Win Rate",cls:"gold"},{val:"3",lbl:"Max Pos",cls:"blue"}],
+    tags:["Bundle","3 Bots","Best Value","All Strategies"],
+    config:{buySize:"Variable",tp:"Variable",sl:"Variable",trailing:"Variable",dca:"Variable"},
+    bundle:true,
+  },
+];
+
+// ── WALLETS ──────────────────────────────────────────────
+const WALLETS=[
+  {id:"phantom",name:"Phantom",icon:"🟣",color:"#ab9ff2",detect:()=>window.solana?.isPhantom,
+    connect:async()=>{const r=await window.solana.connect();return r.publicKey.toString();},url:"https://phantom.app/"},
+  {id:"solflare",name:"Solflare",icon:"🔶",color:"#fc7227",detect:()=>window.solflare?.isSolflare,
+    connect:async()=>{await window.solflare.connect();return window.solflare.publicKey.toString();},url:"https://solflare.com/"},
+  {id:"backpack",name:"Backpack",icon:"🎒",color:"#e33e3f",detect:()=>window.backpack?.isBackpack,
+    connect:async()=>{await window.backpack.connect();return window.backpack.publicKey.toString();},url:"https://backpack.app/"},
+  {id:"coinbase",name:"Coinbase Wallet",icon:"🔵",color:"#0052ff",detect:()=>!!window.coinbaseSolana,
+    connect:async()=>{const r=await window.coinbaseSolana.connect();return r.publicKey.toString();},url:"https://coinbase.com/wallet"},
+  {id:"brave",name:"Brave Wallet",icon:"🦁",color:"#ff6000",detect:()=>window.solana?.isBraveWallet,
+    connect:async()=>{const r=await window.solana.connect();return r.publicKey.toString();},url:"https://brave.com/wallet/"},
+  {id:"trust",name:"Trust Wallet",icon:"🛡️",color:"#3375BB",detect:()=>!!window.trustwallet?.solana,
+    connect:async()=>{const r=await window.trustwallet.solana.connect();return r.publicKey.toString();},url:"https://trustwallet.com/"},
+];
+function prov(id){const m={phantom:window.solana,solflare:window.solflare,backpack:window.backpack,coinbase:window.coinbaseSolana,brave:window.solana,trust:window.trustwallet?.solana};return m[id];}
+
+function buildWalletList(){
+  const det=WALLETS.filter(w=>w.detect&&w.detect()),rest=WALLETS.filter(w=>!w.detect||!w.detect());
+  let h="";
+  if(det.length){h+=`<div class="w-divider">Detected</div>`;h+=det.map(w=>wHTML(w,true)).join("");}
+  if(rest.length){h+=`<div class="w-divider">Install to use</div>`;h+=rest.map(w=>wHTML(w,false)).join("");}
+  document.getElementById("wList").innerHTML=h;
+}
+function wHTML(w,det){return`<div class="w-opt ${det?"det":""}" onclick="pickWallet('${w.id}')">
+  <div class="w-icon" style="background:${w.color}22;border:1px solid ${w.color}44;">${w.icon}</div>
+  <div style="flex:1"><div class="w-name">${w.name}</div>
+    <div class="w-status ${det?"det":""}">${det?"Detected · Ready":"Not installed"}</div></div>
+  <div style="color:var(--muted);font-size:16px;">${det?"›":"↗"}</div></div>`;}
+async function pickWallet(id){
+  const w=WALLETS.find(x=>x.id===id);
+  if(!w)return;
+  if(!w.detect||!w.detect()){window.open(w.url,"_blank");return;}
+  try{const pk=await w.connect();connWallet={id,pubkey:pk};closeModal();updateWalletBtn();}
+  catch(e){alert("Connect failed: "+(e.message||"unknown"));}
+}
+function updateWalletBtn(){
+  const btn=document.getElementById("walletBtn");if(!btn)return;
+  if(connWallet){btn.className="wallet-btn conn";const w=WALLETS.find(x=>x.id===connWallet.id);
+    btn.innerHTML=`<span style="width:8px;height:8px;border-radius:50%;background:var(--gold);display:inline-block;"></span> ${w?.name}: ${connWallet.pubkey.slice(0,4)}...${connWallet.pubkey.slice(-4)}`;}
+  else{btn.className="wallet-btn";btn.innerHTML=`<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg> Connect Wallet`;}
+}
+function openModal(){
+  if(connWallet){if(confirm("Disconnect?")){{connWallet=null;updateWalletBtn();}return;}}
+  buildWalletList();document.getElementById("wModal").classList.add("open");
+}
+function closeModal(){document.getElementById("wModal").classList.remove("open");}
+function bgClose(e){if(e.target.id==="wModal")closeModal();}
+
+// ── PRICES ───────────────────────────────────────────────
+async function fetchPrices(){
+  try{const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd");
+    const d=await r.json();solUSD=d?.solana?.usd||150;satUSD=0.005;
+    const el=document.getElementById("satPrice");if(el)el.textContent="$"+satUSD.toFixed(4);}catch(e){}
+}
+
+// ── RENDER AGENTS ────────────────────────────────────────
+function renderAgents(){
+  const grid=document.getElementById("agentGrid");
+  grid.innerHTML=AGENTS.map(a=>{
+    const solPrice=a.bundle?`${SOL_PER_MONTH*2.5} SOL/mo`:`${SOL_PER_MONTH} SOL/mo`;
+    const satAmt=satAmtForAgent(a);
+    return `<div class="agent-card ${a.featured?"featured":""}" onclick="openAgent('${a.id}')">
+      ${a.featured?'<div class="featured-badge">⭐ RECOMMENDED</div>':""}
+      <div class="ac-header">
+        <div class="ac-icon ${a.iconClass}">${a.icon}</div>
+        <div class="ac-info">
+          <div class="ac-name">${a.name}</div>
+          <div class="ac-strategy">${a.strategy}</div>
+        </div>
+      </div>
+      <div class="ac-desc">${a.desc}</div>
+      <div class="ac-stats">${a.stats.map(s=>`<div class="acs">
+        <div class="acs-val ${s.cls}">${s.val}</div>
+        <div class="acs-lbl">${s.lbl}</div></div>`).join("")}</div>
+      <div class="ac-tags">${a.tags.map(t=>`<span class="actag ${t==="live"?"live":""}">${t==="live"?"🟢 LIVE":t}</span>`).join("")}</div>
+      <div class="ac-footer">
+        <div class="ac-price">
+          <div class="acp-sol">${solPrice}</div>
+          <div class="acp-sat">${satAmt.toLocaleString()} $SATURN/mo</div>
+          <div class="acp-disc">50% OFF WITH $SATURN</div>
+        </div>
+        <button class="ac-btn ${a.bundle?"purple":""}" onclick="event.stopPropagation();openAgent('${a.id}')">
+          ${a.bundle?"🪐 Deploy Bundle":"🚀 Deploy"}
+        </button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function satAmtForAgent(a){
+  const base=a.bundle?SOL_PER_MONTH*2.5:SOL_PER_MONTH;
+  if(!satUSD||!solUSD)return Math.ceil(base*0.5/0.005);
+  return Math.ceil(base*solUSD*SAT_DISC/satUSD);
+}
+
+function renderMyBots(){
+  const c=document.getElementById("myBots");
+  if(myBots.length===0){
+    c.innerHTML=`<div class="empty-state"><div class="es-icon">🤖</div>
+      <div class="es-title">No Active Agents</div>
+      <div class="es-sub">Deploy a bot from the marketplace above to get started.<br/>Your agents will appear here once activated.</div></div>`;
+    return;
+  }
+  c.innerHTML=myBots.map((b,i)=>`
+    <div class="my-bot-card">
+      <div class="mbc-icon">${b.icon}</div>
+      <div class="mbc-info">
+        <div class="mbc-name"><span class="status-dot dot-live"></span>${b.name}</div>
+        <div class="mbc-meta">Active since ${b.since} · Paid with ${b.feeMethod==="sat"?"$SATURN (50% off)":"SOL"}</div>
+      </div>
+      <div class="mbc-stats">
+        <div class="mbc-stat"><div class="mbc-val green">+${b.fakePnl}%</div><div class="mbc-lbl">Session PnL</div></div>
+        <div class="mbc-stat"><div class="mbc-val">${b.trades}</div><div class="mbc-lbl">Trades</div></div>
+      </div>
+      <button onclick="removeBot(${i})" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#f87171;border-radius:8px;padding:8px 14px;cursor:pointer;font-size:12px;font-weight:700;font-family:'Syne',sans-serif;">Deactivate</button>
+    </div>`).join("");
+}
+
+function removeBot(i){myBots.splice(i,1);renderMyBots();}
+
+// ── PURCHASE FLOW ────────────────────────────────────────
+function openAgent(id){
+  selectedAgent=AGENTS.find(a=>a.id===id);
+  pmFeeMethod="sol";pmLoading=false;pmError="";
+  document.getElementById("pmTitle").textContent=`Deploy ${selectedAgent.name}`;
+  document.getElementById("pmSub").textContent=selectedAgent.strategy;
+  renderPM();
+  document.getElementById("pmModal").classList.add("open");
+}
+function closePM(){document.getElementById("pmModal").classList.remove("open");}
+function pmBgClose(e){if(e.target.id==="pmModal")closePM();}
+
+function renderPM(){
+  if(!selectedAgent)return;
+  const a=selectedAgent;
+  const solAmt=a.bundle?SOL_PER_MONTH*2.5:SOL_PER_MONTH;
+  const satAmt=satAmtForAgent(a);
+  const solUSDVal=(solAmt*solUSD).toFixed(2);
+  const satUSDVal=(satAmt*satUSD).toFixed(2);
+
+  document.getElementById("pmContent").innerHTML=`
+    <div class="pm-agent-preview">
+      <div class="pm-agent-icon">${a.icon}</div>
+      <div><div class="pm-agent-name">${a.name}</div>
+        <div class="pm-agent-strategy">${a.strategy}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">
+          Buy: ${a.config.buySize} · TP: ${a.config.tp} · SL: ${a.config.sl} · DCA: ${a.config.dca}
+        </div></div>
+    </div>
+
+    <div style="font-size:10px;font-weight:700;color:var(--muted2);letter-spacing:0.07em;text-transform:uppercase;margin-bottom:9px;">Payment Method (Monthly)</div>
+    <div class="fee-toggle-pm">
+      <div class="fo-pm ${pmFeeMethod==="sol"?"fsol":""}" onclick="setPMFee('sol')">
+        <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+          <span style="font-size:16px;">◎</span><div class="frdot-pm"></div></div>
+        <div class="fo-pm-title">Pay with SOL</div>
+        <div class="fo-pm-amt sol">${solAmt} SOL/mo</div>
+        <div class="fo-pm-sub">≈ $${solUSDVal}/mo</div>
+      </div>
+      <div class="fo-pm ${pmFeeMethod==="sat"?"fsat":""}" onclick="setPMFee('sat')" style="position:relative;">
+        <div class="pm-save-pill">SAVE 50%</div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+          <span style="font-size:16px;">🪐</span><div class="frdot-pm"></div></div>
+        <div class="fo-pm-title">Pay with $SATURN</div>
+        <div class="fo-pm-amt sat">${satAmt.toLocaleString()} SAT/mo</div>
+        <div class="fo-pm-sub">≈ $${satUSDVal}/mo · 50% off!</div>
+      </div>
+    </div>
+
+    <div style="background:var(--s2);border:1px solid var(--b1);border-radius:10px;padding:13px 15px;margin-bottom:14px;font-size:12px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+        <span style="color:var(--muted2);">Monthly fee</span>
+        <span style="font-weight:700;font-family:'Space Mono',monospace;color:${pmFeeMethod==="sat"?"var(--gold)":"var(--purple)"};">${pmFeeMethod==="sol"?solAmt+" SOL":satAmt.toLocaleString()+" $SATURN"}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;">
+        <span style="color:var(--muted2);">Performance fee</span>
+        <span style="font-weight:700;font-family:'Space Mono',monospace;">${PERF_FEE*100}% of profits</span>
+      </div>
+    </div>
+
+    ${pmError?`<div class="pm-alert pm-alert-red">⚠️ ${pmError}</div>`:""}
+    ${!connWallet?`<div class="pm-alert pm-alert-blue">🔌 Connect your wallet to proceed.</div>`:""}
+    <div class="pm-alert pm-alert-gold">⚠️ Your wallet will prompt approval for the first month's fee.</div>
+
+    <div class="pm-btn-row">
+      <button class="pm-btn-cancel" onclick="closePM()">Cancel</button>
+      <button class="pm-btn-confirm" onclick="confirmDeploy()" ${!connWallet||pmLoading?"disabled":""}>
+        ${pmLoading?`<span class="pm-spinner"></span> Signing...`:`🚀 Deploy ${a.bundle?"Bundle":"Agent"}`}
+      </button>
+    </div>`;
+}
+
+function setPMFee(m){pmFeeMethod=m;renderPM();}
+
+async function confirmDeploy(){
+  if(!connWallet){pmError="Connect wallet first.";renderPM();return;}
+  pmLoading=true;pmError="";renderPM();
+  const a=selectedAgent;
+  const solAmt=a.bundle?SOL_PER_MONTH*2.5:SOL_PER_MONTH;
+  const satAmt=satAmtForAgent(a);
+  try{
+    const conn=new solanaWeb3.Connection(RPC,"confirmed");
+    const provider=prov(connWallet.id)||window.solana;
+    const from=new solanaWeb3.PublicKey(connWallet.pubkey);
+    const to=new solanaWeb3.PublicKey(FEE_WALLET);
+    const {blockhash}=await conn.getLatestBlockhash();
+    const tx=new solanaWeb3.Transaction({recentBlockhash:blockhash,feePayer:from});
+
+    if(pmFeeMethod==="sol"){
+      tx.add(solanaWeb3.SystemProgram.transfer({fromPubkey:from,toPubkey:to,lamports:Math.round(solAmt*solanaWeb3.LAMPORTS_PER_SOL)}));
+    }else{
+      // SPL token transfer for $SATURN fee
+      const TPK=new solanaWeb3.PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
+      const ATPK=new solanaWeb3.PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJe1bRS");
+      const mintPK=new solanaWeb3.PublicKey(SATURN_MINT);
+      const toOwner=new solanaWeb3.PublicKey(FEE_WALLET);
+      const bigAmt=BigInt(Math.round(satAmt*(10**SATURN_DEC)));
+      const ata=o=>solanaWeb3.PublicKey.findProgramAddressSync([o.toBuffer(),TPK.toBuffer(),mintPK.toBuffer()],ATPK)[0];
+      const fromATA=ata(from),toATA=ata(toOwner);
+      const toInfo=await conn.getAccountInfo(toATA);
+      if(!toInfo)tx.add(new solanaWeb3.TransactionInstruction({programId:ATPK,
+        keys:[{pubkey:from,isSigner:true,isWritable:true},{pubkey:toATA,isSigner:false,isWritable:true},
+          {pubkey:toOwner,isSigner:false,isWritable:false},{pubkey:mintPK,isSigner:false,isWritable:false},
+          {pubkey:solanaWeb3.SystemProgram.programId,isSigner:false,isWritable:false},{pubkey:TPK,isSigner:false,isWritable:false}],
+        data:Buffer.from([])}));
+      const td=Buffer.alloc(9);td[0]=3;td.writeBigUInt64LE(bigAmt,1);
+      tx.add(new solanaWeb3.TransactionInstruction({programId:TPK,
+        keys:[{pubkey:fromATA,isSigner:false,isWritable:true},{pubkey:toATA,isSigner:false,isWritable:true},{pubkey:from,isSigner:true,isWritable:false}],
+        data:td}));
+    }
+    const signed=await provider.signTransaction(tx);
+    await conn.sendRawTransaction(signed.serialize());
+
+    // Add to my bots
+    myBots.push({
+      id:a.id,name:a.name,icon:a.icon,strategy:a.strategy,
+      feeMethod:pmFeeMethod,
+      since:new Date().toLocaleTimeString(),
+      fakePnl:(Math.random()*40+5).toFixed(1),
+      trades:Math.floor(Math.random()*8+1),
+    });
+    closePM();renderMyBots();
+    alert(`✅ ${a.name} deployed successfully! Agent is now active.`);
+  }catch(e){
+    pmError=e.message||"Transaction failed. Try again.";
+  }finally{pmLoading=false;renderPM();}
+}
+
+// ── INIT ─────────────────────────────────────────────────
+fetchPrices();
+renderAgents();
+renderMyBots();
+setInterval(fetchPrices,60000);
+window.addEventListener("load",async()=>{
+  if(window.solana?.isPhantom){try{const r=await window.solana.connect({onlyIfTrusted:true});connWallet={id:"phantom",pubkey:r.publicKey.toString()};updateWalletBtn();}catch(e){}}
+});
+</script>
+</body>
+</html>

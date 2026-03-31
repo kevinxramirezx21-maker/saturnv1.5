@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Saturn Protocol | AI Trading Agents & Token Locks</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#03050c;--s:#07090f;--s2:#0c0f1a;--s3:#101420;--b:#131826;--b2:#1a2236;--gold:#c9a84c;--purple:#9945FF;--green:#00d98b;--red:#ef4444;--text:#dde6f5;--m:#2a3a52;--m2:#5a7090;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-serif;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse 100% 60% at 50% -10%,rgba(201,168,76,0.08) 0%,transparent 55%),radial-gradient(ellipse 60% 60% at 0% 100%,rgba(153,69,255,0.06) 0%,transparent 55%);pointer-events:none;}
+body::after{content:'';position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(201,168,76,0.018) 1px,transparent 1px),linear-gradient(90deg,rgba(201,168,76,0.018) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;}
+header{position:sticky;top:0;z-index:100;background:rgba(3,5,12,0.95);backdrop-filter:blur(24px);border-bottom:1px solid var(--b);padding:0 28px;height:64px;display:flex;align-items:center;justify-content:space-between;}
+.logo{display:flex;align-items:center;gap:12px;cursor:pointer;user-select:none;}
+.logo-ico{width:40px;height:40px;flex-shrink:0;}
+.logo-ico svg{width:40px;height:40px;}
+.logo-name{display:flex;flex-direction:column;gap:1px;}
+.logo-title{font-size:17px;font-weight:800;letter-spacing:-0.02em;}
+.logo-sub{font-size:9px;color:var(--gold);font-weight:700;letter-spacing:0.14em;text-transform:uppercase;font-family:'Space Mono',monospace;}
+.hdr-right{display:flex;align-items:center;gap:8px;}
+.dev-badge{display:none;align-items:center;gap:6px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.35);border-radius:8px;padding:5px 11px;font-size:11px;font-weight:700;color:#f87171;font-family:'Space Mono',monospace;cursor:pointer;}
+.dev-badge-dot{width:6px;height:6px;border-radius:50%;background:#ef4444;animation:blink 1s infinite;}
+.ticker{display:flex;align-items:center;gap:6px;background:var(--s2);border:1px solid var(--b2);border-radius:8px;padding:5px 11px;font-size:12px;}
+.tdot{width:6px;height:6px;border-radius:50%;background:var(--gold);box-shadow:0 0 7px rgba(201,168,76,0.7);animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.3;}}
+.tsym{color:var(--m2);}.tprice{font-weight:700;color:var(--gold);font-family:'Space Mono',monospace;}
+.wallet-btn{display:flex;align-items:center;gap:7px;padding:9px 15px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:none;font-family:'Space Grotesk',sans-serif;transition:all 0.2s;background:linear-gradient(135deg,#9945FF,#7c3aed);color:white;}
+.wallet-btn:hover{transform:translateY(-1px);}
+.wallet-btn.conn{background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.28);color:var(--gold);}
+.wdot{width:8px;height:8px;border-radius:50%;background:var(--gold);}
+.modal-bd{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.8);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity 0.2s;}
+.modal-bd.open{opacity:1;pointer-events:all;}
+.modal{background:var(--s);border:1px solid var(--b2);border-radius:20px;padding:26px;width:100%;max-width:400px;transform:translateY(14px);transition:transform 0.2s;}
+.modal-bd.open .modal{transform:none;}
+.mhdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;}
+.mtitle{font-size:18px;font-weight:700;}
+.mclose{width:30px;height:30px;border-radius:7px;border:1px solid var(--b2);background:transparent;color:var(--m2);cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center;}
+.mclose:hover{background:var(--s2);}
+.msub{font-size:12px;color:var(--m2);margin-bottom:16px;}
+.wlist{display:flex;flex-direction:column;gap:7px;}
+.wopt{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;cursor:pointer;border:1.5px solid var(--b);background:var(--s2);transition:all 0.15s;}
+.wopt:hover{border-color:var(--b2);transform:translateX(2px);}
+.wopt.det{border-color:rgba(201,168,76,0.2);}
+.wopt.det:hover{border-color:var(--gold);}
+.wicon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.winfo{flex:1;}.wname{font-size:13px;font-weight:700;margin-bottom:1px;}.wstatus{font-size:10px;color:var(--m2);}.wstatus.det{color:var(--gold);}
+.wdiv{text-align:center;font-size:10px;color:var(--m);padding:6px 0;text-transform:uppercase;letter-spacing:0.08em;font-weight:700;}
+/* DEV MODAL */
+.dev-modal{max-width:380px;}
+.dev-icon{font-size:36px;text-align:center;margin-bottom:10px;}
+.dev-title{font-size:18px;font-weight:800;text-align:center;color:var(--gold);margin-bottom:3px;}
+.dev-sub{font-size:12px;color:var(--m2);text-align:center;margin-bottom:18px;}
+.dev-perks{background:var(--s2);border:1px solid var(--b2);border-radius:10px;padding:13px;margin-bottom:14px;}
+.dp-title{font-size:9px;font-weight:700;color:var(--m2);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:7px;font-family:'Space Mono',monospace;}
+.dp-row{font-size:12px;color:var(--m2);margin-bottom:4px;display:flex;gap:6px;}
+.dp-row span{color:var(--green);}
+.dev-input-wrap{margin-bottom:8px;}
+.dev-inp{width:100%;background:var(--s2);border:1.5px solid var(--b2);border-radius:10px;padding:13px;color:var(--text);font-size:16px;font-family:'Space Mono',monospace;text-align:center;letter-spacing:0.08em;transition:border-color 0.2s;}
+.dev-inp:focus{outline:none;border-color:var(--gold);}
+.dev-inp::placeholder{color:var(--m);font-size:13px;letter-spacing:0.04em;}
+.dev-err{font-size:11px;color:#f87171;text-align:center;min-height:14px;margin-bottom:8px;}
+.btn-dev{width:100%;padding:12px;border-radius:10px;border:none;font-size:14px;font-weight:800;cursor:pointer;font-family:'Space Grotesk',sans-serif;background:linear-gradient(135deg,#c9a84c,#a07830);color:#03050c;transition:all 0.18s;}
+.btn-dev:hover{transform:translateY(-1px);box-shadow:0 7px 22px rgba(201,168,76,0.35);}
+/* DEV STATUS MODAL */
+.dev-panel{background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.2);border-radius:11px;padding:14px;margin-bottom:12px;}
+.dev-panel-title{font-size:10px;font-weight:700;color:#f87171;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;font-family:'Space Mono',monospace;}
+.dp-stat{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:12px;}
+.dp-stat:last-child{margin-bottom:0;}
+.dpk{color:var(--m2);}.dpv{font-weight:700;font-family:'Space Mono',monospace;}
+.dpv.free{color:var(--green);}.dpv.always{color:var(--m2);}
+.dev-addr{background:var(--s2);border:1px solid var(--b2);border-radius:9px;padding:12px;margin-bottom:12px;}
+.dev-addr-title{font-size:9px;font-weight:700;color:var(--m2);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:5px;font-family:'Space Mono',monospace;}
+.dev-addr-val{font-size:10px;font-family:'Space Mono',monospace;color:var(--gold);word-break:break-all;line-height:1.5;}
+.dev-addr-note{font-size:10px;color:var(--m2);margin-top:4px;}
+.btn-deact{width:100%;padding:9px;border-radius:8px;border:1px solid rgba(239,68,68,0.3);background:transparent;color:#f87171;font-size:12px;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif;transition:all 0.15s;}
+.btn-deact:hover{background:rgba(239,68,68,0.1);}
+/* MAIN */
+main{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:56px 24px 80px;}
+.hero{text-align:center;margin-bottom:64px;}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.22);border-radius:20px;padding:6px 14px;font-size:11px;font-weight:700;color:var(--gold);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:22px;}
+.hero h1{font-size:clamp(30px,6vw,62px);font-weight:800;letter-spacing:-0.04em;line-height:1.05;margin-bottom:16px;}
+.hero h1 span{color:var(--gold);}
+.hero p{font-size:16px;color:var(--m2);max-width:540px;margin:0 auto 28px;line-height:1.65;}
+.hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+.btn-primary{padding:13px 26px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;border:none;font-family:'Space Grotesk',sans-serif;background:linear-gradient(135deg,#c9a84c,#a07830);color:#03050c;text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:all 0.2s;}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(201,168,76,0.35);}
+.btn-secondary{padding:13px 26px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;background:transparent;border:1.5px solid var(--b2);color:var(--text);font-family:'Space Grotesk',sans-serif;text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:all 0.2s;}
+.btn-secondary:hover{border-color:var(--gold);color:var(--gold);}
+.saturn-vis{width:160px;height:160px;margin:0 auto 28px;}
+.saturn-vis svg{width:100%;height:100%;}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:56px;}
+.sc{background:var(--s);border:1px solid var(--b);border-radius:14px;padding:18px;text-align:center;}
+.sc-lbl{font-size:10px;color:var(--m2);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:7px;font-family:'Space Mono',monospace;}
+.sc-val{font-size:24px;font-weight:800;color:var(--gold);font-family:'Space Mono',monospace;}
+.sc-sub{font-size:11px;color:var(--m2);margin-top:3px;}
+.section-title{font-size:12px;font-weight:700;color:var(--m2);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:18px;font-family:'Space Mono',monospace;}
+.app-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:56px;}
+.app-card{background:var(--s);border:1px solid var(--b);border-radius:18px;padding:26px;text-decoration:none;color:inherit;transition:all 0.2s;position:relative;overflow:hidden;}
+.app-card::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity 0.2s;pointer-events:none;}
+.app-card:hover{transform:translateY(-3px);}
+.app-card:hover::before{opacity:1;}
+.app-card.lock:hover{border-color:rgba(201,168,76,0.4);}
+.app-card.lock::before{background:radial-gradient(ellipse at top left,rgba(201,168,76,0.06) 0%,transparent 70%);}
+.app-card.agents:hover{border-color:rgba(153,69,255,0.4);}
+.app-card.agents::before{background:radial-gradient(ellipse at top left,rgba(153,69,255,0.06) 0%,transparent 70%);}
+.app-card.swap:hover{border-color:rgba(0,217,139,0.3);}
+.app-card.swap::before{background:radial-gradient(ellipse at top left,rgba(0,217,139,0.06) 0%,transparent 70%);}
+.ac-ico{width:50px;height:50px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:23px;margin-bottom:14px;}
+.ac-ico.l{background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.2);}
+.ac-ico.a{background:rgba(153,69,255,0.1);border:1px solid rgba(153,69,255,0.2);}
+.ac-ico.s{background:rgba(0,217,139,0.1);border:1px solid rgba(0,217,139,0.2);}
+.ac-title{font-size:17px;font-weight:700;margin-bottom:7px;}
+.ac-desc{font-size:12px;color:var(--m2);line-height:1.6;margin-bottom:16px;}
+.ac-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;}
+.ac-tag{font-size:9px;font-weight:700;padding:3px 7px;border-radius:5px;text-transform:uppercase;letter-spacing:0.04em;}
+.t-gold{background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.22);color:var(--gold);}
+.t-purple{background:rgba(153,69,255,0.1);border:1px solid rgba(153,69,255,0.22);color:#c084fc;}
+.t-green{background:rgba(0,217,139,0.1);border:1px solid rgba(0,217,139,0.22);color:var(--green);}
+.ac-cta{font-size:12px;font-weight:700;}
+.ac-cta.g{color:var(--gold);}.ac-cta.p{color:#a855f7;}.ac-cta.gr{color:var(--green);}
+.fee-tbl{background:var(--s);border:1px solid var(--b);border-radius:14px;overflow:hidden;margin-bottom:56px;}
+.fee-hdr{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;padding:12px 18px;border-bottom:1px solid var(--b);background:var(--s2);}
+.fee-hdr span{font-size:10px;font-weight:700;color:var(--m2);text-transform:uppercase;letter-spacing:0.07em;font-family:'Space Mono',monospace;}
+.fee-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;padding:13px 18px;border-bottom:1px solid var(--b);}
+.fee-row:last-child{border-bottom:none;}
+.fee-row:hover{background:var(--s2);}
+.fr-n{font-size:12px;font-weight:600;}
+.fr-v{font-size:12px;font-family:'Space Mono',monospace;}
+.fr-v.g{color:var(--gold);}.fr-v.p{color:#a855f7;}.fr-v.gr{color:var(--green);}.fr-v.free{color:#f87171;font-weight:700;}.fr-v.dim{color:var(--m2);}
+.tok-sec{background:var(--s);border:1px solid var(--b);border-radius:18px;padding:30px;margin-bottom:56px;display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:center;}
+.tok-left h2{font-size:22px;font-weight:800;letter-spacing:-0.02em;margin-bottom:10px;}
+.tok-left p{font-size:13px;color:var(--m2);line-height:1.65;margin-bottom:0;}
+.tok-right{display:flex;flex-direction:column;gap:10px;}
+.ts{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;background:var(--s2);border:1px solid var(--b);border-radius:9px;}
+.ts-k{font-size:12px;color:var(--m2);}.ts-v{font-size:13px;font-weight:700;font-family:'Space Mono',monospace;color:var(--gold);}
+footer{position:relative;z-index:1;border-top:1px solid var(--b);padding:22px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.fl{font-size:12px;color:var(--m2);}
+.fl strong{color:var(--gold);}
+.footer-links{display:flex;gap:14px;}
+.footer-links a{font-size:12px;color:var(--m2);text-decoration:none;}
+.footer-links a:hover{color:var(--gold);}
+.port{background:var(--s2);border:1px solid var(--b2);border-radius:13px;padding:16px 20px;margin-bottom:28px;display:none;}
+.port.show{display:block;}
+.port-title{font-size:10px;font-weight:700;color:var(--m2);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;font-family:'Space Mono',monospace;}
+.port-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.pc{background:var(--s);border:1px solid var(--b);border-radius:8px;padding:10px;text-align:center;}
+.pc-l{font-size:9px;color:var(--m);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:3px;font-family:'Space Mono',monospace;}
+.pc-v{font-size:14px;font-weight:800;font-family:'Space Mono',monospace;}
+.pc-v.gold{color:var(--gold);}.pc-v.green{color:var(--green);}.pc-v.red{color:#f87171;}
+@media(max-width:768px){.app-grid{grid-template-columns:1fr;}.stats-row{grid-template-columns:1fr 1fr;}.tok-sec{grid-template-columns:1fr;}.fee-hdr,.fee-row{grid-template-columns:2fr 1fr 1fr;}.fee-hdr span:last-child,.fee-row .fr-v:last-child{display:none;}header{padding:0 16px;}.port-grid{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo" id="saturnLogo">
+    <div class="logo-ico">
+      <svg viewBox="0 0 40 40" fill="none">
+        <circle cx="20" cy="20" r="18" stroke="#c9a84c" stroke-width="1.2" opacity="0.3"/>
+        <circle cx="20" cy="20" r="13" stroke="#c9a84c" stroke-width="1.8" opacity="0.7"/>
+        <ellipse cx="20" cy="20" rx="19" ry="6.5" stroke="#c9a84c" stroke-width="1.2" opacity="0.4" transform="rotate(-20 20 20)"/>
+        <circle cx="20" cy="20" r="5.5" fill="#c9a84c"/>
+        <circle cx="20" cy="20" r="3" fill="#03050c"/>
+      </svg>
+    </div>
+    <div class="logo-name">
+      <span class="logo-title">Saturn Protocol</span>
+      <span class="logo-sub">V1.2 · Built on Solana</span>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <div class="dev-badge" id="devBadge" onclick="openDevStatus()"><span class="dev-badge-dot"></span>DEV MODE</div>
+    <div class="ticker"><span class="tdot"></span><span class="tsym">$SATURN</span><span class="tprice" id="satPrice">$0.0050</span></div>
+    <button class="wallet-btn" id="walletBtn" onclick="openWallet()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M21 18v1a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v1"/><polyline points="15 3 21 9 15 15"/><line x1="21" y1="9" x2="7" y2="9"/></svg>
+      Connect Wallet
+    </button>
+  </div>
+</header>
+
+<!-- WALLET MODAL -->
+<div class="modal-bd" id="wModal" onclick="if(event.target===this)document.getElementById('wModal').classList.remove('open')">
+  <div class="modal">
+    <div class="mhdr"><div class="mtitle">Connect Wallet</div><button class="mclose" onclick="document.getElementById('wModal').classList.remove('open')">×</button></div>
+    <p class="msub">Connect to access Saturn Protocol.</p>
+    <div class="wlist" id="wList"></div>
+  </div>
+</div>
+
+<!-- DEV LOGIN MODAL -->
+<div class="modal-bd" id="devModal" onclick="if(event.target===this)closeDevModal()">
+  <div class="modal dev-modal">
+    <div class="mhdr"><div></div><button class="mclose" onclick="closeDevModal()">×</button></div>
+    <div class="dev-icon">🛸</div>
+    <div class="dev-title">Developer Access</div>
+    <div class="dev-sub">Enter your promo code to unlock dev mode</div>
+    <div class="dev-perks">
+      <div class="dp-title">Dev Mode Includes</div>
+      <div class="dp-row"><span>✓</span> Zero lock creation fees</div>
+      <div class="dp-row"><span>✓</span> Free agent subscriptions</div>
+      <div class="dp-row"><span>✓</span> Zero 0.20% token protocol fee</div>
+      <div class="dp-row"><span>✓</span> Only pay Solana network gas</div>
+      <div class="dp-row"><span>✓</span> Separate dev deposit address</div>
+    </div>
+    <div class="dev-input-wrap">
+      <input class="dev-inp" id="devCodeInput" type="password" placeholder="Enter promo code..." onkeydown="if(event.key==='Enter')submitDevCode()"/>
+    </div>
+    <div class="dev-err" id="devError"></div>
+    <button class="btn-dev" onclick="submitDevCode()">Unlock Dev Access 🔓</button>
+  </div>
+</div>
+
+<!-- DEV STATUS MODAL -->
+<div class="modal-bd" id="devStatusModal" onclick="if(event.target===this)document.getElementById('devStatusModal').classList.remove('open')">
+  <div class="modal dev-modal">
+    <div class="mhdr"><div class="mtitle" style="color:#f87171;">🛸 Dev Mode Active</div><button class="mclose" onclick="document.getElementById('devStatusModal').classList.remove('open')">×</button></div>
+    <div class="dev-panel">
+      <div class="dev-panel-title">Fee Overrides (This Session)</div>
+      <div class="dp-stat"><span class="dpk">Lock creation fee</span><span class="dpv free">FREE</span></div>
+      <div class="dp-stat"><span class="dpk">Protocol token fee (0.20%)</span><span class="dpv free">FREE</span></div>
+      <div class="dp-stat"><span class="dpk">Agent subscription</span><span class="dpv free">FREE</span></div>
+      <div class="dp-stat"><span class="dpk">Solana network gas</span><span class="dpv always">Always paid</span></div>
+    </div>
+    <div class="dev-addr">
+      <div class="dev-addr-title">Dev Deposit Address (SOL Only)</div>
+      <div class="dev-addr-val">F36PUYop1oCsBQMyP8aHncGppiGd1xyUm8k75PtHAoN3</div>
+      <div class="dev-addr-note">Send SOL here to fund dev agent testing. No protocol fees deducted in dev mode.</div>
+    </div>
+    <button class="btn-deact" onclick="deactivateDev()">Deactivate Dev Mode</button>
+  </div>
+</div>
+
+<main>
+  <div class="hero">
+    <div class="saturn-vis">
+      <svg viewBox="0 0 180 180" fill="none">
+        <circle cx="90" cy="90" r="50" fill="#0c0f1a" stroke="#c9a84c" stroke-width="1.5" opacity="0.8"/>
+        <circle cx="90" cy="90" r="35" fill="#131826"/>
+        <circle cx="90" cy="90" r="14" fill="#c9a84c" opacity="0.9"/>
+        <circle cx="90" cy="90" r="8" fill="#03050c"/>
+        <ellipse cx="90" cy="90" rx="85" ry="22" stroke="#c9a84c" stroke-width="2" opacity="0.5" transform="rotate(-20 90 90)"/>
+        <ellipse cx="90" cy="90" rx="78" ry="18" stroke="#c9a84c" stroke-width="1" opacity="0.3" transform="rotate(-20 90 90)"/>
+        <circle cx="138" cy="68" r="4" fill="#c9a84c" opacity="0.7"/>
+        <circle cx="42" cy="112" r="3" fill="#c9a84c" opacity="0.5"/>
+      </svg>
+    </div>
+    <div class="hero-badge"><span style="color:var(--gold)">●</span> Saturn V1.2 · Live on Solana</div>
+    <h1>AI Trading Agents<br/>& <span>Token Locks</span></h1>
+    <p>The first protocol combining autonomous AI trading bots with meme coin token locking — powered by <strong style="color:var(--gold)">$SATURN</strong> for 50% fee discounts.</p>
+    <div class="hero-btns">
+      <a href="agents.html" class="btn-primary">🤖 Launch AI Agent</a>
+      <a href="lock.html" class="btn-secondary">🔒 Lock Tokens</a>
+    </div>
+  </div>
+
+  <div class="port" id="portStrip">
+    <div class="port-title">Your Portfolio</div>
+    <div class="port-grid">
+      <div class="pc"><div class="pc-l">Agents</div><div class="pc-v gold">0</div></div>
+      <div class="pc"><div class="pc-l">Locks</div><div class="pc-v gold">0</div></div>
+      <div class="pc"><div class="pc-l">$SATURN</div><div class="pc-v green">—</div></div>
+      <div class="pc"><div class="pc-l">Dev Mode</div><div class="pc-v red" id="portDev">OFF</div></div>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="sc"><div class="sc-lbl">Fee Discount</div><div class="sc-val">50%</div><div class="sc-sub">With $SATURN</div></div>
+    <div class="sc"><div class="sc-lbl">AI Agents</div><div class="sc-val">6</div><div class="sc-sub">Pre-configured</div></div>
+    <div class="sc"><div class="sc-lbl">Protocol Fee</div><div class="sc-val">0.20%</div><div class="sc-sub">On locked tokens</div></div>
+    <div class="sc"><div class="sc-lbl">Wallets</div><div class="sc-val">6+</div><div class="sc-sub">All major Solana</div></div>
+  </div>
+
+  <div class="section-title">Protocol Apps</div>
+  <div class="app-grid">
+    <a href="lock.html" class="app-card lock">
+      <div class="ac-ico l">🔒</div>
+      <div class="ac-title">Saturn Lock</div>
+      <div class="ac-desc">Lock meme tokens by time or price target. Prove diamond hands, protect LP, build community trust.</div>
+      <div class="ac-tags"><span class="ac-tag t-gold">Time Lock</span><span class="ac-tag t-gold">Price Lock</span><span class="ac-tag t-gold">LP Tokens</span></div>
+      <div class="ac-cta g">Lock Tokens →</div>
+    </a>
+    <a href="agents.html" class="app-card agents">
+      <div class="ac-ico a">🤖</div>
+      <div class="ac-title">Saturn Agents</div>
+      <div class="ac-desc">Deploy autonomous AI trading agents on Solana. Auto DCA, take-profit, stop-loss. Trade 24/7.</div>
+      <div class="ac-tags"><span class="ac-tag t-purple">AI Trading</span><span class="ac-tag t-purple">Auto DCA</span><span class="ac-tag t-purple">Memecoin</span></div>
+      <div class="ac-cta p">Browse Agents →</div>
+    </a>
+    <a href="lock.html" class="app-card swap">
+      <div class="ac-ico s">⚡</div>
+      <div class="ac-title">Saturn Swap</div>
+      <div class="ac-desc">Swap SOL to $SATURN via Jupiter. Unlock 50% fee discounts across everything.</div>
+      <div class="ac-tags"><span class="ac-tag t-green">Jupiter Powered</span><span class="ac-tag t-green">Best Rates</span><span class="ac-tag t-green">50% Off</span></div>
+      <div class="ac-cta gr">Swap Now →</div>
+    </a>
+  </div>
+
+  <div class="section-title">Fee Structure</div>
+  <div class="fee-tbl">
+    <div class="fee-hdr"><span>Action</span><span>SOL Price</span><span>$SATURN Price</span><span>Dev Mode</span></div>
+    <div class="fee-row"><span class="fr-n">🔒 Create Token Lock</span><span class="fr-v">0.5 SOL</span><span class="fr-v g">0.25 SOL equiv.</span><span class="fr-v free">FREE ✓</span></div>
+    <div class="fee-row"><span class="fr-n">🤖 Agent Monthly Sub</span><span class="fr-v">0.125 SOL/mo</span><span class="fr-v g">0.0625 SOL equiv.</span><span class="fr-v free">FREE ✓</span></div>
+    <div class="fee-row"><span class="fr-n">📊 Protocol Token Fee</span><span class="fr-v">0.20% tokens</span><span class="fr-v g">0.20% tokens</span><span class="fr-v free">FREE ✓</span></div>
+    <div class="fee-row"><span class="fr-n">⛽ Solana Gas</span><span class="fr-v">~0.000005 SOL</span><span class="fr-v g">~0.000005 SOL</span><span class="fr-v dim">Always</span></div>
+  </div>
+
+  <div class="tok-sec">
+    <div class="tok-left">
+      <h2>🪐 $SATURN Token</h2>
+      <p style="margin-bottom:14px;">The native utility token of Saturn Protocol V1.2. Every lock and agent subscription drives real buy demand for $SATURN.</p>
+      <p>Hold $SATURN to cut every protocol fee in half — across Saturn Lock and Saturn Agents.</p>
+    </div>
+    <div class="tok-right">
+      <div class="ts"><span class="ts-k">Token Name</span><span class="ts-v">Saturn V1.2</span></div>
+      <div class="ts"><span class="ts-k">Ticker</span><span class="ts-v">$SATURN</span></div>
+      <div class="ts"><span class="ts-k">Network</span><span class="ts-v">Solana</span></div>
+      <div class="ts"><span class="ts-k">Fee Discount</span><span class="ts-v" style="color:var(--green)">50% OFF</span></div>
+      <div class="ts"><span class="ts-k">Contract</span><span class="ts-v" style="font-size:11px;">TGE Soon</span></div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="fl">© 2025 <strong>Saturn Protocol V1.2</strong> · Built on Solana</div>
+  <div class="footer-links">
+    <a href="lock.html">Lock</a><a href="agents.html">Agents</a>
+    <a href="#">Twitter</a><a href="#">Telegram</a>
+  </div>
+</footer>
+
+<script>
+// ── DEV MODE ──────────────────────────────────────────────────────
+const DEV_CODE="boss2026";
+const DEV_KEY="saturn_dev_v12";
+let tapCount=0,tapTimer=null;
+
+function initDevMode(){
+  if(sessionStorage.getItem(DEV_KEY)==="true") applyDev(true);
+  const logo=document.getElementById("saturnLogo");
+  if(!logo) return;
+  logo.addEventListener("click",()=>{
+    tapCount++;
+    clearTimeout(tapTimer);
+    tapTimer=setTimeout(()=>{tapCount=0;},3000);
+    if(tapCount>=5){tapCount=0;openDevModal();}
+  });
+}
+function openDevModal(){
+  document.getElementById("devModal").classList.add("open");
+  setTimeout(()=>document.getElementById("devCodeInput").focus(),100);
+}
+function closeDevModal(){
+  document.getElementById("devModal").classList.remove("open");
+  document.getElementById("devCodeInput").value="";
+  document.getElementById("devError").textContent="";
+}
+function submitDevCode(){
+  const v=document.getElementById("devCodeInput").value.trim().toLowerCase();
+  if(v===DEV_CODE){
+    sessionStorage.setItem(DEV_KEY,"true");
+    closeDevModal();
+    applyDev(true);
+    showToast("🛸 Dev mode activated! All protocol fees waived.");
+  } else {
+    document.getElementById("devError").textContent="Invalid code. Try again.";
+    document.getElementById("devCodeInput").value="";
+  }
+}
+function openDevStatus(){document.getElementById("devStatusModal").classList.add("open");}
+function deactivateDev(){
+  sessionStorage.removeItem(DEV_KEY);
+  document.getElementById("devStatusModal").classList.remove("open");
+  applyDev(false);
+  showToast("Dev mode deactivated.");
+}
+function isDevMode(){return sessionStorage.getItem(DEV_KEY)==="true";}
+function applyDev(on){
+  const b=document.getElementById("devBadge");
+  if(b) b.style.display=on?"flex":"none";
+  const pd=document.getElementById("portDev");
+  if(pd){pd.textContent=on?"ON":"OFF";pd.className="pc-v "+(on?"red":"");}
+}
+function showToast(msg){
+  const t=document.createElement("div");
+  t.style.cssText="position:fixed;bottom:24px;right:24px;z-index:999;background:#1a2236;border:1px solid var(--gold);color:var(--text);border-radius:12px;padding:13px 18px;font-size:13px;font-weight:600;font-family:'Space Grotesk',sans-serif;box-shadow:0 8px 28px rgba(0,0,0,0.5);max-width:300px;";
+  t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(),4000);
+}
+
+// ── WALLETS ───────────────────────────────────────────────────────
+const WALLETS=[
+  {id:"phantom",name:"Phantom",color:"#ab9ff2",detect:()=>!!window.solana?.isPhantom,connect:async()=>{const r=await window.solana.connect();return r.publicKey.toString();},url:"https://phantom.app/"},
+  {id:"solflare",name:"Solflare",color:"#fc7227",detect:()=>!!window.solflare?.isSolflare,connect:async()=>{await window.solflare.connect();return window.solflare.publicKey.toString();},url:"https://solflare.com/"},
+  {id:"backpack",name:"Backpack",color:"#e33e3f",detect:()=>!!(window.backpack?.isBackpack||window.xnft?.solana),connect:async()=>{const b=window.backpack||window.xnft?.solana;await b.connect();return b.publicKey.toString();},url:"https://backpack.app/"},
+  {id:"coinbase",name:"Coinbase Wallet",color:"#0052ff",detect:()=>!!window.coinbaseSolana,connect:async()=>{const r=await window.coinbaseSolana.connect();return r.publicKey.toString();},url:"https://www.coinbase.com/wallet"},
+  {id:"brave",name:"Brave Wallet",color:"#ff6000",detect:()=>!!(window.braveSolana||window.solana?.isBraveWallet),connect:async()=>{const w=window.braveSolana||window.solana;const r=await w.connect();return r.publicKey.toString();},url:"https://brave.com/wallet/"},
+  {id:"trust",name:"Trust Wallet",color:"#3375BB",detect:()=>!!window.trustwallet?.solana,connect:async()=>{const r=await window.trustwallet.solana.connect();return r.publicKey.toString();},url:"https://trustwallet.com/"},
+];
+let W={id:null,pubkey:null};
+function openWallet(){
+  if(W.pubkey){if(confirm("Disconnect?"))disconnect();return;}
+  const det=WALLETS.filter(w=>w.detect&&w.detect()),not=WALLETS.filter(w=>!w.detect||!w.detect());
+  let h="";
+  if(det.length){h+=`<div class="wdiv">Detected</div>`;h+=det.map(w=>wH(w,true)).join("");}
+  if(not.length){h+=`<div class="wdiv">Install to use</div>`;h+=not.map(w=>wH(w,false)).join("");}
+  document.getElementById("wList").innerHTML=h;
+  document.getElementById("wModal").classList.add("open");
+}
+function wH(w,det){return `<div class="wopt ${det?"det":""}" onclick="selW('${w.id}')"><div class="wicon" style="background:${w.color}20;border:1px solid ${w.color}30">💼</div><div class="winfo"><div class="wname">${w.name}</div><div class="wstatus ${det?"det":""}">${det?"Detected · Ready":"Not installed"}</div></div><div style="color:var(--m);font-size:14px;">${det?"›":"↗"}</div></div>`;}
+async function selW(id){
+  const w=WALLETS.find(x=>x.id===id);if(!w)return;
+  if(!w.detect||!w.detect()){window.open(w.url,"_blank");return;}
+  try{const pk=await w.connect();W={id,pubkey:pk};document.getElementById("wModal").classList.remove("open");updateBtn();showPort();}catch(e){alert("Failed: "+(e.message||"Unknown"));}
+}
+function disconnect(){W={id:null,pubkey:null};updateBtn();document.getElementById("portStrip").classList.remove("show");}
+function updateBtn(){
+  const btn=document.getElementById("walletBtn");
+  if(W.pubkey){btn.className="wallet-btn conn";btn.innerHTML=`<span class="wdot"></span>${W.pubkey.slice(0,4)}...${W.pubkey.slice(-4)}`;}
+  else{btn.className="wallet-btn";btn.innerHTML=`<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M21 18v1a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v1"/><polyline points="15 3 21 9 15 15"/><line x1="21" y1="9" x2="7" y2="9"/></svg>Connect Wallet`;}
+}
+function showPort(){
+  document.getElementById("portStrip").classList.add("show");
+  const pd=document.getElementById("portDev");
+  if(pd){pd.textContent=isDevMode()?"ON":"OFF";pd.className="pc-v "+(isDevMode()?"red":"");}
+}
+async function fetchPrices(){try{await fetch("https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd");}catch(e){}}
+window.addEventListener("load",async()=>{
+  fetchPrices();initDevMode();
+  if(window.solana?.isPhantom){try{const r=await window.solana.connect({onlyIfTrusted:true});W={id:"phantom",pubkey:r.publicKey.toString()};updateBtn();showPort();}catch(e){}}
+  if(!W.pubkey&&window.solflare?.isSolflare){try{await window.solflare.connect();if(window.solflare.publicKey){W={id:"solflare",pubkey:window.solflare.publicKey.toString()};updateBtn();showPort();}}catch(e){}}
+});
+</script>
+</body>
+</html>
